@@ -1,20 +1,37 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Container Loading Problem</title>
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{% static 'container/styles.css' %}"
-    />
-  </head>
-  <body>
-    Hello {{request.user}} <br />
-    Authentication Successful<br />
-    Testing if Django application is working<br />
-    <a href="{% url 'logout' %}">Logout</a>
-  </body>
-</html>
+{% extends 'container/layout.html' %} {% block body %}
+<h1>Select Boxes and Quantity</h1>
+
+<form method="post" id="box-order-form">
+  {% csrf_token %} {{ formset.management_form }}
+  <div id="form-container">
+    {% for form in formset %}
+    <div class="box-order-form">
+      {{ form.sku_name.label_tag }} {{ form.sku_name }}
+      <br />
+      {{ form.quantity.label_tag }} {{ form.quantity }}
+      <br />
+      {% if form.DELETE %} {{ form.DELETE }} {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <input type="submit" name="submit" value="Order" />
+  <input type="submit" name="add_box" value="Add Another Box" />
+</form>
+
+{% if graph_json %} {% for graph_data in graph_json %}
+<h2>Visualization {{ forloop.counter }}</h2>
+<div id="container-plot-{{ forloop.counter }}"></div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    var graphData{{ forloop.counter }} = JSON.parse('{{ graph_data|escapejs }}');
+    Plotly.newPlot("container-plot-{{ forloop.counter }}", graphData{{ forloop.counter }}.data, graphData{{ forloop.counter }}.layout)
+      .then(gd => {
+        // Optional: Handle additional plot settings or interactions if needed
+      });
+  });
+</script>
+{% endfor %} {% endif %}
+
+<a href="{% url 'container:logout' %}">Logout</a>
+{% endblock %}

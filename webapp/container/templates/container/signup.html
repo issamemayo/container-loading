@@ -1,19 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
-    <h1>Sign up</h1>
-    {% if message %} {{ message }} {% endif %}
-    <form action="{% url 'signup' %}" method="post">
-      {% csrf_token %}
-      <input type="text" name="new_username" placeholder="New Username" />
-      <input type="password" name="password" placeholder="Password" />
-      <input type="submit" value="Sign Up" />
-    </form>
-    <br />
-  </body>
-</html>
+{% extends 'container/layout.html' %} {% block body %}
+<h1>Sign up</h1>
+{% if message %} {{ message }} {% endif %}
+<form action="{% url 'container:signup' %}" method="post">
+  {% csrf_token %}
+  <input type="text" name="new_username" placeholder="New Username" />
+  <input type="password" name="password" placeholder="Password" />
+  <input type="submit" value="Sign Up" />
+</form>
+<br />
+{% endblock %}
