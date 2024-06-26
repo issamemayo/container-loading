@@ -8,6 +8,7 @@ class Box:
         self.width = width
         self.breadth = breadth
         self.height = height
+        
         self.label = label
         self.volume = width * breadth * height
 
@@ -20,20 +21,20 @@ class Container:
         self.volume = width * breadth * height
         self.boxes = []
 
-    def place_box(self, box, x, y, z):
+    def place_box(self, box, x, y, z, tolerance=0):
         # Ensure box fits within container boundaries
         if (
             x >= 0 and y >= 0 and z >= 0 and
-            x + box.width <= self.width and
-            y + box.height <= self.height and
-            z + box.breadth <= self.breadth
+            x + box.width <= self.width + tolerance and
+            y + box.height <= self.height + tolerance and
+            z + box.breadth <= self.breadth + tolerance
         ):
             # Ensure no collision with existing boxes in the container
             for existing_box, bx, by, bz in self.boxes:
                 if (
-                    x < bx + existing_box.width and x + box.width > bx and
-                    y < by + existing_box.height and y + box.height > by and
-                    z < bz + existing_box.breadth and z + box.breadth > bz
+                    x < bx + existing_box.width + tolerance and x + box.width > bx - tolerance and
+                    y < by + existing_box.height + tolerance and y + box.height > by - tolerance and
+                    z < bz + existing_box.breadth + tolerance and z + box.breadth > bz -tolerance
                 ):
                     return False
 
@@ -81,7 +82,7 @@ def visualize_containers(containers):
     # Set the layout for the figure
     fig.update_layout(
         scene=dict(
-            xaxis=dict(title='Width'),
+            xaxis=dict(title='Length'),
             yaxis=dict(title='Height'),
             zaxis=dict(title='Breadth'),
         ),
@@ -91,6 +92,20 @@ def visualize_containers(containers):
     )
 
     return fig
+
+def centre_of_gravity(container):
+    nx,ny,nz,denominator=0,0,0,0
+    #Iterate over every box in a given container
+    for box in container.boxes:
+        nx+=box[0].weight*(box[1]+box[0].width/2)
+        ny+=box[0].weight*(box[2]+box[0].breadth/2)
+        nz+=box[0].weight*(box[3]+box[0].height/2)
+        denominator+=box[0].weight
+    nx/=denominator
+    ny/=denominator
+    nz/=denominator
+
+    return nx,ny,nz
 
 def visualize_containers_matplot(containers):
     num_containers = len(containers)
@@ -107,6 +122,7 @@ def visualize_containers_matplot(containers):
             [0, 0, 0], [container.width, 0, 0], [container.width, container.height, 0], [0, container.height, 0],
             [0, 0, container.breadth], [container.width, 0, container.breadth], [container.width, container.height, container.breadth], [0, container.height, container.breadth]
         ]
+
         faces = [
             [vertices[0], vertices[1], vertices[5], vertices[4]],
             [vertices[7], vertices[6], vertices[2], vertices[3]],
@@ -119,10 +135,16 @@ def visualize_containers_matplot(containers):
         poly3d = Poly3DCollection(faces, facecolors='cyan', linewidths=1, edgecolors='r', alpha=0.1)
         ax.add_collection3d(poly3d)
         # Placement of boxes within the containers
+
         for box, x, y, z in container.boxes:
             ax.bar3d(x, y, z, box.width, box.height, box.breadth, alpha=0.5)
+            print(f"{box.label},{x},{y},{z}, -  {box.weight}")
             # Label placement for boxes
             ax.text(x + box.width / 2, y + box.height / 2, z + box.breadth / 2, box.label, color='black', ha='center', va='center')
+        cx,cy,cz=centre_of_gravity(container)
+        print(f"cog- {cx},{cy},{cz}")
+        ax.scatter(cx,cy,cz,color="r",s=100,alpha=1.0)
+        ax.text(cx,cy,cz,"CoG",color="black",fontsize=14)
 
         ax.set_title(f"Container {i + 1}")
 
@@ -183,9 +205,8 @@ def main():
         Box(30, 20, 10, 'Box3'),
         Box(10, 10, 10, 'Box4'),
         Box(40, 60, 30, 'Box5'),
-        Box(40, 30, 30, 'Box6'),
-        Box(60, 20, 10, 'Box7'),
-        Box(90, 100, 100, 'Box7')
+        Box(40, 30, 30,  'Box6'),
+        Box(90, 100, 100,'Box7')
     ]
 
     if not best_fit_decreasing(containers, boxes):

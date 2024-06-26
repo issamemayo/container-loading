@@ -1,10 +1,12 @@
-{% extends 'container/layout.html' %} {% block body %}
-<h1>Select Boxes and Quantity</h1>
-
+{% extends 'container/layout.html' %} {% block body %} x`
 <form method="post" id="box-order-form">
-  {% csrf_token %} {{ formset.management_form }}
+  {% csrf_token %}
+  <h2>Select Truck</h2>
+  {{ truck_form.as_p }} {{ formset.management_form }}
   <div id="form-container">
+    <h2>Select Boxes and Quantities</h2>
     {% for form in formset %}
+
     <div class="box-order-form">
       {{ form.sku_name.label_tag }} {{ form.sku_name }}
       <br />

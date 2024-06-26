@@ -1,5 +1,5 @@
 from django import forms
-from .models import BoxData
+from .models import BoxData,TruckData
 from django.forms import formset_factory
 
 class BoxOrderForm(forms.Form):
@@ -11,3 +11,6 @@ class BoxOrderForm(forms.Form):
     quantity = forms.IntegerField(min_value=1, label='Quantity')
 
 BoxOrderFormSet = forms.formset_factory(BoxOrderForm, extra=0, can_delete=True)
+
+class TruckForm(forms.Form):
+    number = forms.ModelChoiceField(queryset=TruckData.objects.all(), label='Select Truck')

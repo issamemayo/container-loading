@@ -4,7 +4,7 @@ import json
 import plotly.io as pio
 from django.forms import formset_factory
 from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
@@ -12,13 +12,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from .forms import BoxOrderFormSet,BoxOrderForm
-from .models import BoxData
-from .algorithm import Container, Box, best_fit_decreasing, visualize_containers,visualize_containers_matplot
+from .forms import BoxOrderFormSet,BoxOrderForm, TruckForm
+from .models import BoxData, TruckData
+from .algorithm import Container, Box, best_fit_decreasing, visualize_containers
 
 # Create your views here.
+
 def index(request):
     BoxOrderFormSet = formset_factory(BoxOrderForm, extra=1, can_delete=True)
+    truck_form = TruckForm(request.POST or None)
+
 
     if request.method == 'POST':
         if 'add_box' in request.POST:
@@ -29,8 +32,9 @@ def index(request):
                 formset = BoxOrderFormSet(initial=formset.cleaned_data, prefix='boxes')
         else:
             formset = BoxOrderFormSet(request.POST, prefix='boxes')
-            if formset.is_valid():
-                # Process the formset data
+            truck_form = TruckForm(request.POST)
+            if formset.is_valid() and truck_form.is_valid():
+                # Process the box order formset data
                 box_orders = []
                 for form in formset:
                     if form.cleaned_data:
@@ -44,15 +48,17 @@ def index(request):
                 for order in box_orders:
                     box_data = BoxData.objects.get(sku_name=order['sku_name'])
                     for _ in range(order['quantity']):
-                        boxes.append(Box(box_data.length/10, box_data.breadth/10, box_data.height/10, box_data.sku_name))
+                        boxes.append(Box(box_data.length, box_data.breadth, box_data.height, box_data.sku_name))
                 
-                # Set up the containers
-                initial_container_size = (100, 100, 100)
-                containers = [Container(*initial_container_size)]
+                # Get the selected truck's dimensions
+                truck = truck_form.cleaned_data['number']
+                truck_data = get_object_or_404(TruckData, number=truck)
+                container_size = (truck_data.length, truck_data.breadth, truck_data.height)
+                containers = [Container(*container_size)]
 
                 if not best_fit_decreasing(containers, boxes):
                     error_message = "Error: No valid arrangement of boxes found."
-                    return render(request, 'container/index.html', {'formset': formset, 'box_orders': box_orders, 'error_message': error_message})
+                    return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form, 'box_orders': box_orders, 'error_message': error_message})
 
                 # Generate Plotly JSON data for each container
                 graph_json = []
@@ -60,12 +66,13 @@ def index(request):
                     fig = visualize_containers([container])
                     graph_json.append(fig.to_json())
 
-                return render(request, 'container/index.html', {'formset': formset, 'box_orders': box_orders, 'graph_json': graph_json})
+                return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form, 'box_orders': box_orders, 'graph_json': graph_json})
 
     else:
         formset = BoxOrderFormSet(prefix='boxes')
+        truck_form = TruckForm()
 
-    return render(request, 'container/index.html', {'formset': formset})
+    return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form})
 
     
 def add_box(request):
