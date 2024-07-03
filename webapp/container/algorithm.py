@@ -93,7 +93,7 @@ def visualize_containers(containers):
 
     return fig
 
-def centre_of_gravity(container):
+"""def centre_of_gravity(container):
     nx,ny,nz,denominator=0,0,0,0
     #Iterate over every box in a given container
     for box in container.boxes:
@@ -106,7 +106,7 @@ def centre_of_gravity(container):
     nz/=denominator
 
     return nx,ny,nz
-
+"""
 def visualize_containers_matplot(containers):
     num_containers = len(containers)
     fig = plt.figure(figsize=(10, num_containers * 4))
@@ -138,13 +138,13 @@ def visualize_containers_matplot(containers):
 
         for box, x, y, z in container.boxes:
             ax.bar3d(x, y, z, box.width, box.height, box.breadth, alpha=0.5)
-            print(f"{box.label},{x},{y},{z}, -  {box.weight}")
+            print(f"{box.label},{x},{y},{z}")
             # Label placement for boxes
             ax.text(x + box.width / 2, y + box.height / 2, z + box.breadth / 2, box.label, color='black', ha='center', va='center')
-        cx,cy,cz=centre_of_gravity(container)
+        """cx,cy,cz=centre_of_gravity(container)
         print(f"cog- {cx},{cy},{cz}")
         ax.scatter(cx,cy,cz,color="r",s=100,alpha=1.0)
-        ax.text(cx,cy,cz,"CoG",color="black",fontsize=14)
+        ax.text(cx,cy,cz,"CoG",color="black",fontsize=14)"""
 
         ax.set_title(f"Container {i + 1}")
 
