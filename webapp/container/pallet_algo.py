@@ -75,8 +75,6 @@ class Pallet(Box):
         dimensions = self.get_dim()  
         return f"Pallet :\ndimensions : {dimensions[0]}x{dimensions[1]}x{dimensions[2]}\nnb_boxes : {self.nb_box}\ncontent : {self.content}"
 
-
-
     def combine(self, other):
         for i in range(len(other.content)):
             self.add_box(other.content[i][0], other.content[i][1], other.content[i][2], other.content[i][3])
@@ -206,7 +204,6 @@ def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=F
 
     return best_pallet
 
-
 def plot_multiple_pallets(pallets, box):
     def draw_pallet(ax, pallet, color='lightgrey', alpha=0.3):
         pallet_vertices = [
@@ -237,7 +234,7 @@ def plot_multiple_pallets(pallets, box):
             rotation = step[0]
             if rotation != rotation_type:
                 continue
-            
+
             nb_L = step[1]
             nb_w = step[2]
             nb_h = step[3]
@@ -309,11 +306,11 @@ def plot_multiple_pallets(pallets, box):
         5: "flat along the height and length of the pallet",
         6: "flat along the height and width of the pallet"
     }
-    
+
     for pallet in pallets:
         if not pallet.content:  # Skip empty pallets
             continue
-        
+
         fig = plt.figure(figsize=(16, 8))
 
         non_empty_rotations = [rt for rt in rotation_types if any(step[0] == rt for step in pallet.content)]
@@ -333,21 +330,18 @@ def plot_multiple_pallets(pallets, box):
         plt.show()
 
 def main():
-    with open("pallet_log.txt", 'w'):  
-        pass  
-
-    box = Box(500, 300, 200)
+    box = Box(396, 298, 199)
     print(box.w, box.L, box.h)  
 
-    pallet = Pallet(1200, 1300, 2200)
+    pallet = Pallet(1200, 1000, 2200)
     print(pallet.get_dim())
 
     optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet.L,pallet.w,pallet.h), debug=True, log_file="pallet_log.txt")
     print(optimized_pallet)
     optimized_pallet.print_way_fill(True)
     optimized_pallet.print_total(True)
-    plot_multiple_pallets([optimized_pallet], box)
 
+    plot_multiple_pallets([optimized_pallet], box)
 
 if __name__ == "__main__":
     main()

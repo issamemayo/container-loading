@@ -14,10 +14,11 @@ def printf(log_file, *text):
         f.write("\n")
 
 class Box:
-    def __init__(self, _L=1, _w=1, _h=1):
+    def __init__(self, _L=1, _w=1, _h=1, _weight=1):
         self.L = _L
         self.w = _w
         self.h = _h
+        self.weight = _weight
 
     def ask_dim(self):
         print("Please enter the following values of the box :")
@@ -43,19 +44,19 @@ class Pallet(Box):
             for i in range(len(self.content)):
                 if rotation == self.content[i][0]:
                     if (nb_L * nb_w * nb_h) > (self.content[i][1] * self.content[i][2] * self.content[i][3]):
-                        self.content[i] = [rotation, nb_L, nb_w, nb_h]
+                        self.content[i] = [rotation, nb_L, nb_w, nb_h, self]
                         self.nb_box -= self.content[i][1] * self.content[i][2] * self.content[i][3]
                         self.nb_box += nb_L * nb_w * nb_h
                     merged = True
             if not merged:
-                self.content.append([rotation, nb_L, nb_w, nb_h])
+                self.content.append([rotation, nb_L, nb_w, nb_h, self])
                 self.nb_box += nb_L * nb_w * nb_h
 
     def remove_box(self, rotation, nb_L, nb_w, nb_h, debug=False, log_file=".log"):
         if len(self.content) == 0:
             return
         try:
-            self.content.remove([rotation, nb_L, nb_w, nb_h])
+            self.content.remove([rotation, nb_L, nb_w, nb_h, self])
             self.nb_box -= nb_L * nb_w * nb_h
         except:
             if debug:
@@ -190,8 +191,7 @@ def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=F
 
     return best_pallet
 
-
-def plot_multiple_pallets(pallets, box):
+def plot_pallet(pallet, box):
     def draw_pallet(ax, pallet, color='lightgrey', alpha=0.3):
         pallet_vertices = [
             (0, 0, 0),
@@ -213,15 +213,25 @@ def plot_multiple_pallets(pallets, box):
         ]
         ax.add_collection3d(Poly3DCollection(pallet_faces, facecolors=color, linewidths=1, edgecolors='k', alpha=alpha))
 
-    def draw_boxes(ax, pallet, box, rotation_type):
-        box_colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon', 'lightseagreen', 'lightskyblue']
+    def draw_boxes(ax, pallet, box):
+        box_colors = ['lightgreen']
         box_color_index = 0
+
+        position_offsets = {
+            1: [0, 0, 0],
+            2: [0, 0, 0]
+        }
+
+        current_x = 0
+        current_y = 0
+
+        cog_x_sum = 0
+        cog_y_sum = 0
+        cog_z_sum = 0
+        total_weight = 0
 
         for step in pallet.content:
             rotation = step[0]
-            if rotation != rotation_type:
-                continue
-            
             nb_L = step[1]
             nb_w = step[2]
             nb_h = step[3]
@@ -234,61 +244,86 @@ def plot_multiple_pallets(pallets, box):
                         color = box_colors[box_color_index]
                         box_color_index += 1
 
+                        offset = position_offsets[rotation]
+
                         if rotation == 1:
-                            x = i * box.L
-                            y = j * box.w
+                            x = current_x + i * box.L
+                            y = current_y + j * box.w
                             z = k * box.h
                             dx = box.L
                             dy = box.w
                             dz = box.h
                         elif rotation == 2:
-                            x = i * box.w
-                            y = j * box.L
+                            x = current_x + i * box.w
+                            y = current_y + j * box.L
                             z = k * box.h
                             dx = box.w
                             dy = box.L
                             dz = box.h
 
-                        ax.bar3d(x, y, z, dx, dy, dz, color=color, edgecolor='black')
+                        ax.bar3d(x, y, z, dx, dy, dz, color=color, edgecolor='black',alpha=0.2)
+
+                        # Update COG calculation
+                        cog_x_sum += (x + dx / 2) * box.weight
+                        cog_y_sum += (y + dy / 2) * box.weight
+                        cog_z_sum += (z + dz / 2) * box.weight
+                        total_weight += box.weight
+
+            # Update the current_x and current_y for the next rotation
+            if rotation == 1:
+                current_x += nb_L * box.L
+            elif rotation == 2:
+                current_y += nb_w * box.L
+
+        # Calculate the final COG coordinates
+        if total_weight != 0:
+            cog_x = cog_x_sum / total_weight
+            cog_y = cog_y_sum / total_weight
+            cog_z = cog_z_sum / total_weight
+        else:
+            cog_x, cog_y, cog_z = 0, 0, 0
 
         ax.set_xlim(0, pallet.L)
         ax.set_ylim(0, pallet.w)
         ax.set_zlim(0, pallet.h)
 
-    rotation_types = {1: "flat along the length of the pallet", 2: "flat along the width of the pallet"}
+        return cog_x, cog_y, cog_z
+
+    fig = plt.figure(figsize=(10, 7))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel('Length (mm)')
+    ax.set_ylabel('Width (mm)')
+    ax.set_zlabel('Height (mm)')
+
+    draw_pallet(ax, pallet, color='lightgrey', alpha=0.3)
+    cog_x, cog_y, cog_z = draw_boxes(ax, pallet, box)
+
+    ax.set_title(f"Pallet with boxes")
+
+    # Plot the center of gravity
+    print(f"{cog_x} - {cog_y} - {cog_z}")
     
-    for pallet in pallets:
-        fig = plt.figure(figsize=(10, 5))
+    ax.scatter(cog_x, cog_y, cog_z, color='darkred', s=100, label='Center of Gravity', depthshade=True)
+    ax.legend()
 
-        for i, (rotation_type, rotation_desc) in enumerate(rotation_types.items()):
-            ax = fig.add_subplot(1, 2, i + 1, projection='3d')
-            ax.set_xlabel('Length (mm)')
-            ax.set_ylabel('Width (mm)')
-            ax.set_zlabel('Height (mm)')
-
-            draw_pallet(ax, pallet, color='lightgrey', alpha=0.3)
-            draw_boxes(ax, pallet, box, rotation_type)
-
-            ax.set_title(f"Pallet with boxes {rotation_desc}")
-
-        plt.tight_layout()
-        plt.show()
+    plt.tight_layout()
+    plt.show()
 
 def main():
     with open("pallet_log.txt", 'w'):  
         pass  
 
-    box = Box(500, 300, 200)
-    print(box.w, box.L, box.h)
+    box = Box(528, 201, 315, 10)
+    print(box.L, box.w, box.h)
 
-    pallet = Pallet(1200, 1300, 2200)
+    pallet = Pallet(1200, 1000, 2200)
     print(pallet.get_dim())
 
-    optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet.L,pallet.w,pallet.h), debug=True, log_file="pallet_log.txt")
+    optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet.L, pallet.w, pallet.h), debug=True, log_file="pallet_log.txt")
     print(optimized_pallet)
     optimized_pallet.print_way_fill(True)
     optimized_pallet.print_total(True)
-    plot_multiple_pallets([optimized_pallet], box)
+    plot_pallet(optimized_pallet, box)
 
 if __name__ == "__main__":
     main()
