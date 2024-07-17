@@ -211,10 +211,10 @@ def plot_pallet(pallet, box):
             [pallet_vertices[2], pallet_vertices[3], pallet_vertices[7], pallet_vertices[6]],
             [pallet_vertices[3], pallet_vertices[0], pallet_vertices[4], pallet_vertices[7]]
         ]
-        ax.add_collection3d(Poly3DCollection(pallet_faces, facecolors=color, linewidths=1, edgecolors='k', alpha=alpha))
+        
 
     def draw_boxes(ax, pallet, box):
-        box_colors = ['lightgreen']
+        box_colors = ['#97BC62']
         box_color_index = 0
 
         position_offsets = {
@@ -261,7 +261,7 @@ def plot_pallet(pallet, box):
                             dy = box.L
                             dz = box.h
 
-                        ax.bar3d(x, y, z, dx, dy, dz, color=color, edgecolor='black',alpha=0.2)
+                        ax.bar3d(x, y, z, dx, dy, dz, color=color, edgecolor='#2C5F2D',alpha=0.25)
 
                         # Update COG calculation
                         cog_x_sum += (x + dx / 2) * box.weight
@@ -313,7 +313,7 @@ def main():
     with open("pallet_log.txt", 'w'):  
         pass  
 
-    box = Box(528, 201, 315, 10)
+    box = Box(396, 199, 287, 10)
     print(box.L, box.w, box.h)
 
     pallet = Pallet(1200, 1000, 2200)

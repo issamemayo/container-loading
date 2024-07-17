@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
+
 # Box definition 
 class Box:
     def __init__(self, width, breadth, height, label):
@@ -197,17 +198,14 @@ def best_fit_decreasing(containers, boxes):
     return True
 
 def main():
-    initial_container_size = (100, 100, 100)
+    initial_container_size = (9750, 2550, 2900)
     containers = [Container(*initial_container_size)]
-    boxes = [
-        Box(20, 30, 40, 'Box1'),
-        Box(50, 50, 50, 'Box2'),
-        Box(30, 20, 10, 'Box3'),
-        Box(10, 10, 10, 'Box4'),
-        Box(40, 60, 30, 'Box5'),
-        Box(40, 30, 30,  'Box6'),
-        Box(90, 100, 100,'Box7')
-    ]
+    boxes = []
+    for i in range(50):
+       boxes.append( Box(450, 210, 210, 'Box1'))
+    
+        
+    
 
     if not best_fit_decreasing(containers, boxes):
         print("Error: No valid arrangement of boxes found.")
