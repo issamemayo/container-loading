@@ -1,39 +1,6 @@
-{% extends 'container/layout.html' %} {% block body %} x`
-<form method="post" id="box-order-form">
-  {% csrf_token %}
-  <h2>Select Truck</h2>
-  {{ truck_form.as_p }} {{ formset.management_form }}
-  <div id="form-container">
-    <h2>Select Boxes and Quantities</h2>
-    {% for form in formset %}
-
-    <div class="box-order-form">
-      {{ form.sku_name.label_tag }} {{ form.sku_name }}
-      <br />
-      {{ form.quantity.label_tag }} {{ form.quantity }}
-      <br />
-      {% if form.DELETE %} {{ form.DELETE }} {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  <input type="submit" name="submit" value="Order" />
-  <input type="submit" name="add_box" value="Add Another Box" />
-</form>
-
-{% if graph_json %} {% for graph_data in graph_json %}
-<h2>Visualization {{ forloop.counter }}</h2>
-<div id="container-plot-{{ forloop.counter }}"></div>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', function() {
-    var graphData{{ forloop.counter }} = JSON.parse('{{ graph_data|escapejs }}');
-    Plotly.newPlot("container-plot-{{ forloop.counter }}", graphData{{ forloop.counter }}.data, graphData{{ forloop.counter }}.layout)
-      .then(gd => {
-        // Optional: Handle additional plot settings or interactions if needed
-      });
-  });
-</script>
-{% endfor %} {% endif %}
-
+{% extends 'container/layout.html' %} {% block body %}
+<a href="{% url 'container:pallet' %}"> Pallet Loading </a>
+<a href="{% url 'container:cargo' %}">Container Loading</a>
 <a href="{% url 'container:logout' %}">Logout</a>
+
 {% endblock %}

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from mpl_toolkits.mplot3d import Axes3D
+import plotly.graph_objects as go
 import numpy as np
 
 def printf_clear(log_file):
@@ -191,6 +192,172 @@ def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=F
 
     return best_pallet
 
+def plot_pallet_plotly(pallet, box):
+    def create_box_faces(x, y, z, dx, dy, dz):
+        # Define the vertices of the box
+        vertices = np.array([
+            [x, y, z],
+            [x + dx, y, z],
+            [x + dx, y + dy, z],
+            [x, y + dy, z],
+            [x, y, z + dz],
+            [x + dx, y, z + dz],
+            [x + dx, y + dy, z + dz],
+            [x, y + dy, z + dz]
+        ])
+
+        # Define the faces of the box
+        faces = [
+            [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+            [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+            [vertices[0], vertices[1], vertices[5], vertices[4]],  # Side face
+            [vertices[1], vertices[2], vertices[6], vertices[5]],  # Side face
+            [vertices[2], vertices[3], vertices[7], vertices[6]],  # Side face
+            [vertices[3], vertices[0], vertices[4], vertices[7]]   # Side face
+        ]
+
+        # Define the edges of the box
+        edges = [
+            [vertices[0], vertices[1]], [vertices[1], vertices[2]], [vertices[2], vertices[3]], [vertices[3], vertices[0]],  # Bottom face edges
+            [vertices[4], vertices[5]], [vertices[5], vertices[6]], [vertices[6], vertices[7]], [vertices[7], vertices[4]],  # Top face edges
+            [vertices[0], vertices[4]], [vertices[1], vertices[5]], [vertices[2], vertices[6]], [vertices[3], vertices[7]]   # Vertical edges
+        ]
+
+        return faces, edges
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    # Add pallet edges
+    pallet_vertices = [
+        [0, 0, 0],
+        [pallet.L, 0, 0],
+        [pallet.L, pallet.w, 0],
+        [0, pallet.w, 0],
+        [0, 0, pallet.h],
+        [pallet.L, 0, pallet.h],
+        [pallet.L, pallet.w, pallet.h],
+        [0, pallet.w, pallet.h]
+    ]
+
+    fig.add_trace(go.Scatter3d(
+        x=[v[0] for v in pallet_vertices],
+        y=[v[1] for v in pallet_vertices],
+        z=[v[2] for v in pallet_vertices],
+        mode='lines',
+        line=dict(color='lightgrey', width=2),
+        marker=dict(size=4)
+    ))
+
+    # Add box faces, edges, and calculate center of gravity
+    box_color = '#97BC62'
+    border_color = 'darkgreen'
+    
+    cog_x_sum = 0
+    cog_y_sum = 0
+    cog_z_sum = 0
+    total_weight = 0
+
+    # Initialize offsets
+    current_x = 0
+    current_y = 0
+
+    for step in pallet.content:
+        rotation = step[0]
+        nb_L = step[1]
+        nb_w = step[2]
+        nb_h = step[3]
+
+        for i in range(nb_L):
+            for j in range(nb_w):
+                for k in range(nb_h):
+                    if rotation == 1:
+                        x = current_x + i * box.L
+                        y = current_y + j * box.w
+                        z = k * box.h
+                        dx = box.L
+                        dy = box.w
+                        dz = box.h
+                    elif rotation == 2:
+                        x = current_x + i * box.w
+                        y = current_y + j * box.L
+                        z = k * box.h
+                        dx = box.w
+                        dy = box.L
+                        dz = box.h
+
+                    # Calculate the center of gravity of the box
+                    cog_x_sum += (x + dx / 2) * box.weight
+                    cog_y_sum += (y + dy / 2) * box.weight
+                    cog_z_sum += (z + dz / 2) * box.weight
+                    total_weight += box.weight
+
+                    # Create box faces and edges
+                    faces, edges = create_box_faces(x, y, z, dx, dy, dz)
+                    
+                    # Add faces with green color
+                    for face in faces:
+                        fig.add_trace(go.Mesh3d(
+                            x=[v[0] for v in face],
+                            y=[v[1] for v in face],
+                            z=[v[2] for v in face],
+                            color=box_color,
+                            opacity=0.5,
+                            flatshading=True
+                        ))
+
+                    # Add edges with dark green color
+                    for edge in edges:
+                        fig.add_trace(go.Scatter3d(
+                            x=[edge[0][0], edge[1][0]],
+                            y=[edge[0][1], edge[1][1]],
+                            z=[edge[0][2], edge[1][2]],
+                            mode='lines',
+                            line=dict(color=border_color, width=2)
+                        ))
+
+        # Update the current_x and current_y for the next rotation
+        if rotation == 1:
+            current_x += nb_L * box.L
+        elif rotation == 2:
+            current_y += nb_w * box.L
+
+    # Calculate the final COG coordinates
+    if total_weight != 0:
+        cog_x = cog_x_sum / total_weight
+        cog_y = cog_y_sum / total_weight
+        cog_z = cog_z_sum / total_weight
+    else:
+        cog_x, cog_y, cog_z = 0, 0, 0
+
+    # Plot the center of gravity as a red dot
+    fig.add_trace(go.Scatter3d(
+        x=[cog_x],
+        y=[cog_y],
+        z=[cog_z],
+        mode='markers',
+        marker=dict(color='red', size=10),
+        name='Center of Gravity'
+    ))
+
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='Length (mm)',
+            yaxis_title='Width (mm)',
+            zaxis_title='Height (mm)',
+            xaxis=dict(nticks=10, range=[0, pallet.L]),
+            yaxis=dict(nticks=10, range=[0, pallet.w]),
+            zaxis=dict(nticks=10, range=[0, pallet.h]),
+            aspectmode='data'
+        ),
+        title='Pallet with Boxes',
+        autosize=False,
+        width=1200,  # Increase the width of the figure
+        height=900   # Increase the height of the figure
+    )
+
+    return fig
+
 def plot_pallet(pallet, box):
     def draw_pallet(ax, pallet, color='lightgrey', alpha=0.3):
         pallet_vertices = [
@@ -240,7 +407,7 @@ def plot_pallet(pallet, box):
                 for j in range(nb_w):
                     for k in range(nb_h):
                         if box_color_index >= len(box_colors):
-                            box_color_index = 0  # Reset color index if all colors used
+                            box_color_index = 0  
                         color = box_colors[box_color_index]
                         box_color_index += 1
 
@@ -313,7 +480,7 @@ def main():
     with open("pallet_log.txt", 'w'):  
         pass  
 
-    box = Box(396, 199, 287, 10)
+    box = Box(610, 350, 452, 10)
     print(box.L, box.w, box.h)
 
     pallet = Pallet(1200, 1000, 2200)

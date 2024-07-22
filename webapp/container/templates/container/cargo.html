@@ -1,0 +1,17 @@
+{% extends 'container/layout.html' %} {% block body %}
+<h1>Container Plot</h1>
+<form method="post">
+  {% csrf_token %} {{ form.as_p }}
+  <button type="submit">Generate Plot</button>
+</form>
+
+{% if plot_div %}
+<h2>Visualization</h2>
+<div>{{ plot_div|safe }}</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+{% endif %}
+<a href="{% url 'container:index' %}">Back to Main Menu</a>
+
+{% endblock %}

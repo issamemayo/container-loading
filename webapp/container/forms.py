@@ -2,15 +2,41 @@ from django import forms
 from .models import BoxData,TruckData
 from django.forms import formset_factory
 
-class BoxOrderForm(forms.Form):
-    sku_name = forms.ChoiceField(
-        choices=[('', '---------')] + [(box.sku_name, box.sku_name) for box in BoxData.objects.all()],
-        widget=forms.Select(attrs={'class': 'sku-select'}),
-        label='Select Box (SKU)'
+class PalletForm(forms.Form):
+    box = forms.ModelChoiceField(
+        queryset=BoxData.objects.all(),
+        required=True,
+        label="Select Box",
+        help_text="Select the box you want to use"
     )
-    quantity = forms.IntegerField(min_value=1, label='Quantity')
+    pallet_length = forms.IntegerField(
+        required=True,
+        initial=1200,
+        label="Pallet Length (mm)",
+        help_text="Enter the length of the pallet in mm"
+    )
+    pallet_breadth = forms.IntegerField(
+        required=True,
+        initial=1000,
+        label="Pallet Breadth (mm)",
+        help_text="Enter the breadth of the pallet in mm"
+    )
+    pallet_height = forms.IntegerField(
+        required=True,
+        initial=2200,
+        label="Pallet Height (mm)",
+        help_text="Enter the height of the pallet in mm"
+    )
 
-BoxOrderFormSet = forms.formset_factory(BoxOrderForm, extra=0, can_delete=True)
+    from django import forms
 
-class TruckForm(forms.Form):
-    number = forms.ModelChoiceField(queryset=TruckData.objects.all(), label='Select Truck')
+class CargoForm(forms.Form):
+    truck_type=forms.ModelChoiceField(
+        queryset=TruckData.objects.all(),
+        required=True,
+        label="Select Truck Number",
+        help_text="Select the Truck to load boxes into"
+    )
+    B1_count = forms.IntegerField(label='Count of B1 Boxes', min_value=0, initial=1000)
+    B2_count = forms.IntegerField(label='Count of B2 Boxes', min_value=0, initial=908)
+    B3_count = forms.IntegerField(label='Count of B3 Boxes', min_value=0, initial=350)

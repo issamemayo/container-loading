@@ -1,0 +1,16 @@
+{% extends "container/layout.html" %} {% block body %}
+
+<h1>Pallet Configuration</h1>
+
+<form method="post">
+  {% csrf_token %} {{ form.as_p }}
+  <button type="submit">Submit</button>
+</form>
+
+{% if plot_div %}
+<h2>Visualization</h2>
+<div class="container">{{ plot_div |safe }}</div>
+
+{% endif %}
+<a href="{% url 'container:index' %}">Back to Main Menu</a>
+{% endblock %}

@@ -1,86 +1,92 @@
 import matplotlib
 import matplotlib.pyplot as plt
-import json
+import logging
+import plotly.graph_objects as go
 import plotly.io as pio
 from django.forms import formset_factory
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render,get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from .forms import BoxOrderFormSet,BoxOrderForm, TruckForm
+from .forms import PalletForm, CargoForm
 from .models import BoxData, TruckData
-from .algorithm import Container, Box, best_fit_decreasing, visualize_containers
+from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly
+from .container_algo import BoxType,Container,render_plotly_plot
+from plotly.offline import plot
+# Create your views here
 
-# Create your views here.
+logger = logging.getLogger(__name__)
 
 def index(request):
-    BoxOrderFormSet = formset_factory(BoxOrderForm, extra=1, can_delete=True)
-    truck_form = TruckForm(request.POST or None)
-
 
     if request.method == 'POST':
-        if 'add_box' in request.POST:
-            extra_forms = int(request.POST.get('extra_forms', 1))
-            formset = BoxOrderFormSet(request.POST, prefix='boxes')
-            if formset.is_valid():
-                formset.extra = extra_forms + 1
-                formset = BoxOrderFormSet(initial=formset.cleaned_data, prefix='boxes')
-        else:
-            formset = BoxOrderFormSet(request.POST, prefix='boxes')
-            truck_form = TruckForm(request.POST)
-            if formset.is_valid() and truck_form.is_valid():
-                # Process the box order formset data
-                box_orders = []
-                for form in formset:
-                    if form.cleaned_data:
-                        sku_name = form.cleaned_data.get('sku_name')
-                        quantity = form.cleaned_data.get('quantity')
-                        if sku_name and quantity:
-                            box_orders.append({'sku_name': sku_name, 'quantity': quantity})
-                
-                # Generate the boxes based on the form data
-                boxes = []
-                for order in box_orders:
-                    box_data = BoxData.objects.get(sku_name=order['sku_name'])
-                    for _ in range(order['quantity']):
-                        boxes.append(Box(box_data.length, box_data.breadth, box_data.height, box_data.sku_name))
-                
-                # Get the selected truck's dimensions
-                truck = truck_form.cleaned_data['number']
-                truck_data = get_object_or_404(TruckData, number=truck)
-                container_size = (truck_data.length, truck_data.breadth, truck_data.height)
-                containers = [Container(*container_size)]
+        return "hi"
 
-                if not best_fit_decreasing(containers, boxes):
-                    error_message = "Error: No valid arrangement of boxes found."
-                    return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form, 'box_orders': box_orders, 'error_message': error_message})
 
-                # Generate Plotly JSON data for each container
-                graph_json = []
-                for container in containers:
-                    fig = visualize_containers([container])
-                    graph_json.append(fig.to_json())
+    return render(request, 'container/index.html')
 
-                return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form, 'box_orders': box_orders, 'graph_json': graph_json})
-
-    else:
-        formset = BoxOrderFormSet(prefix='boxes')
-        truck_form = TruckForm()
-
-    return render(request, 'container/index.html', {'formset': formset, 'truck_form': truck_form})
-
-    
-def add_box(request):
+def pallet_view(request):
+    plot_div = None
     if request.method == 'POST':
-        formset = BoxOrderFormSet(request.POST)
+        form = PalletForm(request.POST)
+        if form.is_valid():
+            box_data = form.cleaned_data['box']
+            box_length = box_data.length
+            box_width = box_data.breadth
+            box_height = box_data.height
+            pallet_length = form.cleaned_data['pallet_length']
+            pallet_width = form.cleaned_data['pallet_breadth']
+            pallet_height = form.cleaned_data['pallet_height']
+
+            # Create Box and Pallet objects
+            box = Box(box_length, box_width, box_height)
+            pallet = Pallet(pallet_length, pallet_width, pallet_height)
+
+            # Fill pallet and get the optimized pallet
+            optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet_length, pallet_width, pallet_height))
+            print(optimized_pallet)
+
+            # Generate Plotly figure using the function
+            fig = plot_pallet_plotly(optimized_pallet, box)
+            plot_div = fig.to_html(full_html=False)  # Convert the figure to HTML for embedding in the template
     else:
-        formset = BoxOrderFormSet()
-    return render(request, 'container/index.html', {'formset': formset})
+        form = PalletForm()
+
+    return render(request, 'container/pallet.html', {'form': form, 'plot_div': plot_div})
+
+def cargo_view(request):
+    plot_div = None
+    if request.method == 'POST':
+        form = CargoForm(request.POST)
+        if form.is_valid():
+            truck_data=form.cleaned_data['truck_type']
+            truck_length=truck_data.length
+            truck_breadth=truck_data.breadth
+            truck_height=truck_data.height
+            B1_count = form.cleaned_data['B1_count']
+            B2_count = form.cleaned_data['B2_count']
+            B3_count = form.cleaned_data['B3_count']
+            
+            B1 = BoxType([450, 210, 210], [0, 0, 1])
+            B2 = BoxType([355, 224, 360], [0, 0, 1])
+            B3 = BoxType([355, 235, 360], [0, 0, 1])
+
+            container = Container([truck_length, truck_breadth, truck_height], {B1: B1_count, B2: B2_count, B3: B3_count})
+            container.fill_all()
+
+            fig = render_plotly_plot(container)
+            plot_div = pio.to_html(fig, full_html=False)
+
+    else:
+        form = CargoForm()
+
+    return render(request, 'container/cargo.html', {'form': form, 'plot_div': plot_div})
+
 
 def login_view(request):
     if request.method=="POST":

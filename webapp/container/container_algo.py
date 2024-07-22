@@ -2,7 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import plotly.graph_objects as go   
+import plotly.io as pio
 
 COLORS = [(0,0,1), (1,0,0), (0,0.6,0.25)]
 MAX_TIKZ_COLORS = 5
@@ -75,6 +77,7 @@ class RectangularCuboid():
         # vertices = self.verticesx
         # ax.scatter(vertices[:,0], vertices[:,1], vertices[:,2], s=0)
 
+  
 class Box():
     """Physical box that will be loaded into a container. Represent a feasible
     orientation of a given BoxType.
@@ -185,6 +188,8 @@ class Block():
         for n in np.ndindex(*self.N):
             self.box.draw(n * self.box.dim + self.pos, ax)
 
+    
+
 class Space():
     """Empty cuboidal space, which we are trying to fill with Blocks (of Boxes).
     
@@ -238,10 +243,10 @@ class Space():
         side_space_dim = [bd0, sd1 - bd1, sd2]
         spaces.append(Space(side_space_pos, side_space_dim))
         
-        # Create top space
+        """ # Create top space   - commented out since only allowed to stack similar boxes on top of each other
         top_space_pos = [sp0, sp1, sp2 + bd2]
         top_space_dim = [bd0, bd1, sd2 - bd2]
-        spaces.append(Space(top_space_pos, top_space_dim))
+        spaces.append(Space(top_space_pos, top_space_dim)) """
         
         # Create front space
         front_space_pos = [sp0 + bd0, sp1, sp2]
@@ -376,6 +381,138 @@ class Container():
             block.draw(ax)
         plt.show()
 
+
+def draw_rectangular_cuboid_plotly(pos, dim, fig, color_faces=(0.7,0.7,0.7)):
+    cuboid = RectangularCuboid(pos, dim)
+    for face in cuboid.faces:
+        fig.add_trace(go.Mesh3d(
+            x=[v[0] for v in face],
+            y=[v[1] for v in face],
+            z=[v[2] for v in face],
+            opacity=0.5,
+            color='rgba({}, {}, {}, 0.5)'.format(*[int(c * 255) for c in color_faces])
+        ))
+
+def create_box_faces(x, y, z, dx, dy, dz):
+    vertices = np.array([
+        [x, y, z],
+        [x + dx, y, z],
+        [x + dx, y + dy, z],
+        [x, y + dy, z],
+        [x, y, z + dz],
+        [x + dx, y, z + dz],
+        [x + dx, y + dy, z + dz],
+        [x, y + dy, z + dz]
+    ])
+
+    faces = [
+        [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+        [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+        [vertices[0], vertices[1], vertices[5], vertices[4]],  # Side face
+        [vertices[1], vertices[2], vertices[6], vertices[5]],  # Side face
+        [vertices[2], vertices[3], vertices[7], vertices[6]],  # Side face
+        [vertices[3], vertices[0], vertices[4], vertices[7]]   # Side face
+    ]
+
+    edges = [
+        [vertices[0], vertices[1]], [vertices[1], vertices[2]], [vertices[2], vertices[3]], [vertices[3], vertices[0]],  # Bottom face edges
+        [vertices[4], vertices[5]], [vertices[5], vertices[6]], [vertices[6], vertices[7]], [vertices[7], vertices[4]],  # Top face edges
+        [vertices[0], vertices[4]], [vertices[1], vertices[5]], [vertices[2], vertices[6]], [vertices[3], vertices[7]]   # Vertical edges
+    ]
+
+    return faces, edges
+
+def draw_box_plotly(pos, box, fig):
+    draw_rectangular_cuboid_plotly(pos, box.dim, fig, color_faces=box.type.color)
+
+def draw_block_plotly(block, fig):
+    for n in np.ndindex(*block.N):
+        draw_box_plotly(n * block.box.dim + block.pos, block.box, fig)
+
+def draw_space_plotly(space, fig):
+    fig.add_trace(go.Scatter3d(
+        x=[space.pos[0], space.pos[0]],
+        y=[space.pos[1], space.pos[1] + space.dim[1]],
+        z=[space.pos[2], space.pos[2]],
+        mode='markers',
+        marker=dict(size=0)
+    ))
+    draw_rectangular_cuboid_plotly(space.pos, space.dim, fig, color_faces=(0.7,0.7,0.7))
+
+def render_plotly_plot(container):
+    fig = go.Figure()
+
+    container_vertices = [
+        [0, 0, 0],
+        [container.dim[0], 0, 0],
+        [container.dim[0], container.dim[1], 0],
+        [0, container.dim[1], 0],
+        [0, 0, container.dim[2]],
+        [container.dim[0], 0, container.dim[2]],
+        [container.dim[0], container.dim[1], container.dim[2]],
+        [0, container.dim[1], container.dim[2]]
+    ]
+
+    fig.add_trace(go.Scatter3d(
+        x=[v[0] for v in container_vertices],
+        y=[v[1] for v in container_vertices],
+        z=[v[2] for v in container_vertices],
+        mode='lines',
+        line=dict(color='lightgrey', width=2),
+        marker=dict(size=4)
+    ))
+
+    box_color = '#97BC62'
+    border_color = 'darkgreen'
+
+    for block in container.blocks:
+        pos = block.pos
+        dim = block.dim
+
+        x, y, z = pos
+        dx, dy, dz = dim
+
+        faces, edges = create_box_faces(x, y, z, dx, dy, dz)
+
+        for face in faces:
+            fig.add_trace(go.Mesh3d(
+                x=[v[0] for v in face],
+                y=[v[1] for v in face],
+                z=[v[2] for v in face],
+                color=box_color,
+                opacity=0.5,
+                flatshading=True
+            ))
+
+        for edge in edges:
+            fig.add_trace(go.Scatter3d(
+                x=[edge[0][0], edge[1][0]],
+                y=[edge[0][1], edge[1][1]],
+                z=[edge[0][2], edge[1][2]],
+                mode='lines',
+                line=dict(color=border_color, width=2)
+            ))
+
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='Length (mm)',
+            yaxis_title='Width (mm)',
+            zaxis_title='Height (mm)',
+            xaxis=dict(nticks=10, range=[0, container.dim[0]]),
+            yaxis=dict(nticks=10, range=[0, container.dim[1]]),
+            zaxis=dict(nticks=10, range=[0, container.dim[2]]),
+            aspectmode='data'
+        ),
+        title='Container with Boxes',
+        autosize=False,
+        width=1200,
+        height=900
+    )
+
+    return fig
+
+
+
 if __name__ == "__main__": 
     B1 = BoxType([450, 210, 210], [0, 0, 1])
     B2 = BoxType([355, 224, 360], [0, 0, 1])
@@ -386,5 +523,7 @@ if __name__ == "__main__":
     
     # Iteratively fill the container until no more blocks can be added
     container.fill_all()
+    
     # Draw the filled container
     container.draw()
+    
