@@ -28,7 +28,7 @@ class PalletForm(forms.Form):
         help_text="Enter the height of the pallet in mm"
     )
 
-    from django import forms
+   
 
 class CargoForm(forms.Form):
     truck_type=forms.ModelChoiceField(
@@ -37,6 +37,15 @@ class CargoForm(forms.Form):
         label="Select Truck Number",
         help_text="Select the Truck to load boxes into"
     )
-    B1_count = forms.IntegerField(label='Count of B1 Boxes', min_value=0, initial=1000)
-    B2_count = forms.IntegerField(label='Count of B2 Boxes', min_value=0, initial=908)
-    B3_count = forms.IntegerField(label='Count of B3 Boxes', min_value=0, initial=350)
+
+
+class BoxTypeForm(forms.Form):
+    box_type=forms.ModelChoiceField(
+        queryset=BoxData.objects.all(),
+        required=True,
+        label="Select Box",
+        help_text="Select Box for loading"
+    )
+    number=forms.IntegerField(label="Enter number of boxes", min_value=0, initial=0)
+
+BoxTypeFormSet=formset_factory(BoxTypeForm, extra=1)

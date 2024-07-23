@@ -1,20 +1,61 @@
-{% extends "container/layout.html" %} {% block body %}
-<h1>Login</h1>
+{% extends "container/layout.html" %} {% load static %} {% block body %}
+<style>
+  body {
+    background-image: url("{% static 'container/supply.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: rgba(0, 0, 0, 0.5); /* Adjust the opacity as needed */
+    background-attachment: fixed;
+    color: #fff; /* Ensure text is readable on dark backgrounds */
+    z-index: index 1;
+  }
+</style>
+<nav class="navbar">
+  <div class="logo">LoadingAlgo</div>
+  <div class="nav-links">
+    <a href="https://www.sampanconsulting.com/">About Us</a>
+    <a href="{% url 'container:login' %}">Login</a>
+    <a href="{% url 'container:signup' %}">Sign Up</a>
+  </div>
+</nav>
+<div class="form-container">
+  <div class="form-wrapper">
+    <h1 class="text-center">Login</h1>
 
-{% if message %}
+    {% if message %}
+    <div class="notification">
+      <p>{{ message }}</p>
+    </div>
+    {% endif %}
 
-<h5>{{message}}</h5>
+    <form action="{% url 'container:login' %}" method="post" class="form">
+      {% csrf_token %}
+      <label for="username">Username</label>
+      <input
+        id="username"
+        type="text"
+        name="username"
+        placeholder="Enter your username"
+        class="input"
+      />
 
-{% endif %}
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        name="password"
+        placeholder="Enter your password"
+        class="input"
+      />
 
-<form action="{% url 'container:login' %}" method="post">
-  {% csrf_token %}
-  <input type="text" name="username" placeholder="Username" />
-  <input type="password" name="password" placeholder="Password" />
-  <input type="submit" value="Login" />
-</form>
-<br />
+      <button type="submit" class="button primary">Login</button>
+    </form>
 
-New Here?
-<a href="{% url 'container:signup' %}">Sign Up</a>
+    <p class="text-center">
+      New Here? <a href="{% url 'container:signup' %}" class="link">Sign Up</a>
+    </p>
+  </div>
+</div>
+
 {% endblock %}

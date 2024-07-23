@@ -1,3 +1,56 @@
 * {
   font-family: monospace;
 }
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Full viewport height */
+}
+body {
+  background-image: url("{% static 'container/supply.jpg' %}");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: #fff; /* Ensure text is readable on dark backgrounds */
+}
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #333; /* Navbar background color */
+  color: #fff; /* Navbar text color */
+  border-bottom: 2px solid #444; /* Optional: border for better separation */
+}
+
+.navbar a {
+  color: #fff; /* Link color */
+  text-decoration: none;
+  margin: 0 1rem;
+}
+
+.navbar a:hover {
+  text-decoration: underline; /* Underline on hover */
+}
+
+.navbar .logo {
+  font-size: 1.5rem;
+}
+
+.navbar .nav-links {
+  display: flex;
+}
+.form-wrapper {
+  width: 100%;
+  max-width: 400px; /* Max width for the form */
+  padding: 1rem; /* Padding around the form */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: subtle shadow for a card-like effect */
+  border-radius: 8px; /* Optional: rounded corners */
+  background: #000; /* Optional: background color */
+}
+
+.notification {
+  margin-bottom: 1rem;
+}

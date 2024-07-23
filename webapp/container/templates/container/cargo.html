@@ -1,8 +1,22 @@
 {% extends 'container/layout.html' %} {% block body %}
 <h1>Container Plot</h1>
 <form method="post">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit">Generate Plot</button>
+  {% csrf_token %} {{ truck_form.as_p }}
+  <!-- Render the truck form -->
+
+  {{ form.management_form }}
+  <!-- Required for formsets to work -->
+
+  {% for form in form %}
+  <fieldset>
+    <legend>Box {{ forloop.counter }}</legend>
+    {{ form.as_p }}
+  </fieldset>
+  {% empty %}
+  <p>No box types available.</p>
+  {% endfor %}
+
+  <button type="submit">Submit</button>
 </form>
 
 {% if plot_div %}

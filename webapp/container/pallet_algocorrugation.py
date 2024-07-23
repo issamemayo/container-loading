@@ -192,6 +192,9 @@ def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=F
 
     return best_pallet
 
+import numpy as np
+import plotly.graph_objects as go
+
 def plot_pallet_plotly(pallet, box):
     def create_box_faces(x, y, z, dx, dy, dz):
         # Define the vertices of the box
@@ -250,7 +253,7 @@ def plot_pallet_plotly(pallet, box):
     ))
 
     # Add box faces, edges, and calculate center of gravity
-    box_color = '#97BC62'
+    box_color = '#3DED97'  # Color for all faces
     border_color = 'darkgreen'
     
     cog_x_sum = 0
@@ -295,7 +298,7 @@ def plot_pallet_plotly(pallet, box):
                     # Create box faces and edges
                     faces, edges = create_box_faces(x, y, z, dx, dy, dz)
                     
-                    # Add faces with green color
+                    # Add all faces with the same color
                     for face in faces:
                         fig.add_trace(go.Mesh3d(
                             x=[v[0] for v in face],
@@ -357,6 +360,7 @@ def plot_pallet_plotly(pallet, box):
     )
 
     return fig
+
 
 def plot_pallet(pallet, box):
     def draw_pallet(ax, pallet, color='lightgrey', alpha=0.3):

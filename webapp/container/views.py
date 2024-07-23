@@ -11,9 +11,8 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
-from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from .forms import PalletForm, CargoForm
+from .forms import PalletForm, CargoForm, BoxTypeForm, BoxTypeFormSet
 from .models import BoxData, TruckData
 from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly
 from .container_algo import BoxType,Container,render_plotly_plot
@@ -61,31 +60,44 @@ def pallet_view(request):
 
 def cargo_view(request):
     plot_div = None
-    if request.method == 'POST':
-        form = CargoForm(request.POST)
-        if form.is_valid():
-            truck_data=form.cleaned_data['truck_type']
-            truck_length=truck_data.length
-            truck_breadth=truck_data.breadth
-            truck_height=truck_data.height
-            B1_count = form.cleaned_data['B1_count']
-            B2_count = form.cleaned_data['B2_count']
-            B3_count = form.cleaned_data['B3_count']
-            
-            B1 = BoxType([450, 210, 210], [0, 0, 1])
-            B2 = BoxType([355, 224, 360], [0, 0, 1])
-            B3 = BoxType([355, 235, 360], [0, 0, 1])
 
-            container = Container([truck_length, truck_breadth, truck_height], {B1: B1_count, B2: B2_count, B3: B3_count})
+    if request.method == 'POST':
+        form = BoxTypeFormSet(request.POST)
+        truck_form = CargoForm(request.POST)  
+        
+        if form.is_valid() and truck_form.is_valid():
+            truck_data = truck_form.cleaned_data['truck_type']
+            truck_length = truck_data.length
+            truck_breadth = truck_data.breadth
+            truck_height = truck_data.height
+
+            # Process formset data
+            box_data = form.cleaned_data
+            quantities_dict = {}
+
+            for form_data in box_data:
+                box_type = form_data['box_type']
+                number = form_data['number']
+                if box_type and number > 0:
+                    quantities_dict[box_type] = number
+
+            # Create the container with the selected box types and quantities
+            container = Container([truck_length, truck_breadth, truck_height], quantities_dict)
             container.fill_all()
 
+            # Render the plot
             fig = render_plotly_plot(container)
             plot_div = pio.to_html(fig, full_html=False)
 
     else:
-        form = CargoForm()
+        form = BoxTypeFormSet()
+        truck_form = CargoForm()  # Assuming you have a form for truck details
 
-    return render(request, 'container/cargo.html', {'form': form, 'plot_div': plot_div})
+    return render(request, 'container/cargo.html', {
+        'form': form,
+        'truck_form': truck_form,
+        'plot_div': plot_div
+    })
 
 
 def login_view(request):

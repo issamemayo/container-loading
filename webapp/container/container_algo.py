@@ -94,9 +94,13 @@ class Box():
     @property
     def volume(self):        
         return np.prod(self.dim)
-    
+
+    @property
+    def weight(self):
+        return self.type.weight
+
     def __repr__(self):
-        return f"{mess.YELLOW}{'·'.join([str(d) for d in self.dim])}{mess.END}"
+        return f"{mess.YELLOW}{'·'.join([str(d) for d in self.dim])}{mess.END}, Weight: {self.weight}"
 
     def draw(self, pos, ax):
         RectangularCuboid(pos, self.dim).draw(ax, self.type.color, self.type.color + (0.1,))
@@ -118,9 +122,10 @@ class BoxType():
         id {int} -- index for identifying types
         color {tuple} -- RGB color used to draw a Box
         permuted_boxes {list of Boxes} -- All possible orientation of a BoxType
+        weight {float} -- weight of a single box
     """    
     id = 0
-    def __init__(self, size, permutation=[0,0,1]):
+    def __init__(self, size, permutation=[0,0,1], weight=1.0):
         assert len(permutation) == 3, "permutation must be a list of 3 items"
         assert permutation[2] == 1, "the vertical alignment of the z-axis must be allowed"
         
@@ -128,6 +133,7 @@ class BoxType():
         self.id = BoxType.id
         BoxType.id += 1
         self.color = COLORS[self.id % len(COLORS)]
+        self.weight = weight
         
         # Set all permutation allowed
         orientations = [(self.size[[2,1,0]], self.size[[1,2,0]]),
@@ -140,7 +146,7 @@ class BoxType():
                 self.permuted_boxes.append(Box(orientations[i][1], self))         
     
     def __repr__(self):
-        return f"({self.id}) {mess.YELLOW}{'·'.join([str(d) for d in self.size])}{mess.END}"
+        return f"({self.id}) {mess.YELLOW}{'·'.join([str(d) for d in self.size])}{mess.END}, Weight: {self.weight}"
 
 class Block():      
     """A Block is a composition of Boxes of the same BoxType.
@@ -278,14 +284,15 @@ class Container():
         cargo {dict[BoxType,int]} -- Boxtypes (and their quantity) that still
         blocks {list of Blocks} -- Blocks of boxes that have been loaded
         spaces {list of Space} -- the remaining spaces that can be filled
-            need to be loaded in the container
     """    
-    def __init__(self, dim, cargo):
+    def __init__(self, dim, cargo,max_weight=12500):
         self.dim = np.array(dim)
         self.spaces = [Space([0,0,0], self.dim)]
         self.blocks = []
         self.cargo = cargo
         self.boxtypes = list(cargo.keys())
+        self.max_weight=max_weight
+        self.current_weight = 0  # Initialize current weight of loaded boxes
     
     @property
     def volume(self):
@@ -311,17 +318,23 @@ class Container():
         
         if blocks_possible:
             new_block = eval(blocks_possible)
-            new_spaces = space.split(new_block)
-            self.spaces.extend(new_spaces)
-            self.blocks.append(new_block)
-            self.cargo[new_block.box.type] -= new_block.Ntot
             
-            # Print available spaces after placing the block
-            print("Available spaces after placing block:")
-            for s in self.spaces:
-                print(f"Position: {s.pos}, Dimensions: {s.dim}")
+            # Calculate weight of the new block
+            block_weight = new_block.box.weight * new_block.Ntot
             
-            return True
+            if self.current_weight + block_weight <= self.max_weight:  # Check weight constraint
+                new_spaces = space.split(new_block)
+                self.spaces.extend(new_spaces)
+                self.blocks.append(new_block)
+                self.cargo[new_block.box.type] -= new_block.Ntot
+                self.current_weight += block_weight  # Update current weight
+                
+                # Print available spaces after placing the block
+                print("Available spaces after placing block:")
+                for s in self.spaces:
+                    print(f"Position: {s.pos}, Dimensions: {s.dim}")
+                
+                return True
         
         self.spaces.insert(0, space)  # Reinsert the space if no block is added
         return False
@@ -337,7 +350,9 @@ class Container():
                 if self.cargo[boxtype] > 0:
                     blocks_possible.extend(space.find_max_blocks({boxtype: self.cargo[boxtype]}))
             
+            
             if blocks_possible:
+            
                 # Sort blocks by volume in descending order
                 blocks_possible.sort(key=lambda block: block.volume, reverse=True)
                 
@@ -345,22 +360,62 @@ class Container():
                 block_placed = False
                 for block in blocks_possible:
                     if space.dim[0] >= block.dim[0] and space.dim[1] >= block.dim[1] and space.dim[2] >= block.dim[2]:
-                        new_spaces = space.split(block)
-                        self.spaces.extend(new_spaces)
-                        self.blocks.append(block)
-                        self.cargo[block.box.type] -= block.Ntot
-                        block_placed = True
-                        print(f"Placed {block.Ntot} boxes of type {block.box.type} in block {block}")
+                        # Calculate weight of the new block
+                        block_weight = block.box.weight * block.Ntot
                         
-                        # Print remaining quantities of each box type
-                        remaining_boxes = {boxtype: self.cargo[boxtype] for boxtype in self.boxtypes}
-                        print(f"Remaining boxes: {remaining_boxes}")
-                        
-                        break  # Exit loop once a block is placed
+                        if self.current_weight + block_weight <= self.max_weight:  # Check weight constraint
+                            new_spaces = space.split(block)
+                            self.spaces.extend(new_spaces)
+                            self.blocks.append(block)
+                            self.cargo[block.box.type] -= block.Ntot
+                            self.current_weight += block_weight  # Update current weight
+                            block_placed = True
+                            
+                            print(f"Placed {block.Ntot} boxes of type {block.box.type} in block {block}")
+                            print(f"Container weight is{self.current_weight}")
+                            
+                            # Print remaining quantities of each box type
+                            remaining_boxes = {boxtype: self.cargo[boxtype] for boxtype in self.boxtypes}
+                            print(f"Remaining boxes: {remaining_boxes}")
+                            
+                            break  # Exit loop once a block is placed
                 
                 if not block_placed:
-                    self.spaces.insert(0, space)  # Reinsert the space if no block is added
-                    print("No more blocks can fit in this space.")
+                    remaining_weight = self.max_weight - self.current_weight
+                    box_weight = block.box.weight  # Assuming block.box.weight gives the weight of one box
+
+                    # Calculate the maximum number of boxes that can be added
+                    max_boxes_to_add = remaining_weight // box_weight
+
+                    if max_boxes_to_add > 0:
+                        # Create a new block with the maximum number of boxes that can be added
+                        boxes_to_add = min(max_boxes_to_add, block.Ntot)  # Ensure we do not exceed the number of boxes in the block
+                        
+                        # Calculate the new dimensions for the block based on the number of boxes to add
+                        new_N = np.array(block.N)
+                        total_boxes_in_block = np.prod(block.N)
+                        reduction_factor = boxes_to_add / total_boxes_in_block
+
+                        # Adjust the dimensions proportionally (assuming uniform reduction)
+                        new_N = np.round(new_N * (reduction_factor ** (1/3))).astype(int)
+                        
+                        # Create a new block with the adjusted dimensions
+                        new_block = Block(box=block.box, N=new_N, space=space)
+
+                        # Split the space and update container state
+                        new_spaces = space.split(new_block)
+                        self.spaces.extend(new_spaces)
+                        self.blocks.append(new_block)
+                        self.cargo[new_block.box.type] -= new_block.Ntot
+                        self.current_weight += boxes_to_add * box_weight  # Update current weight
+                        block_placed = True
+                    else:
+                        self.spaces.insert(0, space)  # Reinsert the space if no boxes can be added
+                        print(f"Container weight is {self.current_weight}")
+                        remaining_boxes = {boxtype: self.cargo[boxtype] for boxtype in self.boxtypes}
+                        print(f"Remaining boxes: {remaining_boxes}")
+                        print("No more blocks can fit in this space.")
+                        break
             else:
                 print("No more blocks can be added.")
                 
@@ -380,7 +435,6 @@ class Container():
         for block in self.blocks:
             block.draw(ax)
         plt.show()
-
 
 def draw_rectangular_cuboid_plotly(pos, dim, fig, color_faces=(0.7,0.7,0.7)):
     cuboid = RectangularCuboid(pos, dim)
@@ -514,12 +568,12 @@ def render_plotly_plot(container):
 
 
 if __name__ == "__main__": 
-    B1 = BoxType([450, 210, 210], [0, 0, 1])
-    B2 = BoxType([355, 224, 360], [0, 0, 1])
-    B3 = BoxType([355, 235, 360], [0, 0, 1])
+    B1 = BoxType([450, 210, 210], [0, 0, 1],100)
+    B2 = BoxType([355, 224, 360], [0, 0, 1],100)
+    B3 = BoxType([355, 235, 360], [0, 0, 1],500)
     
     # Initialize container with cargo
-    container = Container([9750, 2550, 2900], {B1: 1000, B3: 350, B2: 908})
+    container = Container([9750, 2550, 2900], {B1: 100, B3: 20, B2: 5})
     
     # Iteratively fill the container until no more blocks can be added
     container.fill_all()
