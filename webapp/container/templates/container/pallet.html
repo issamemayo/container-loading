@@ -1,4 +1,12 @@
 {% extends "container/layout.html" %} {% block body %}
+<nav class="navbar">
+  <div class="logo">LoadingAlgo</div>
+  <div class="nav-links">
+    <a href="https://www.sampanconsulting.com/">About Us</a>
+    <a href="{% url 'container:index' %}">Main Menu</a>
+    <a href="{% url 'container:logout' %}">Logout</a>
+  </div>
+</nav>
 
 <h1>Pallet Configuration</h1>
 

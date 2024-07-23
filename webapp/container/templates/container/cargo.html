@@ -1,21 +1,33 @@
 {% extends 'container/layout.html' %} {% block body %}
+<nav class="navbar">
+  <div class="logo">LoadingAlgo</div>
+  <div class="nav-links">
+    <a href="https://www.sampanconsulting.com/">About Us</a>
+    <a href="{% url 'container:index' %}">Main Menu</a>
+    <a href="{% url 'container:logout' %}">Logout</a>
+  </div>
+</nav>
 <h1>Container Plot</h1>
-<form method="post">
+<form method="post" id="cargo-form">
   {% csrf_token %} {{ truck_form.as_p }}
   <!-- Render the truck form -->
 
   {{ form.management_form }}
   <!-- Required for formsets to work -->
 
-  {% for form in form %}
-  <fieldset>
-    <legend>Box {{ forloop.counter }}</legend>
-    {{ form.as_p }}
-  </fieldset>
-  {% empty %}
-  <p>No box types available.</p>
-  {% endfor %}
+  <div id="box-forms-container">
+    {% for form in form %}
+    <fieldset>
+      <legend>Box {{ forloop.counter }}</legend>
+      {{ form.as_p }}
+      <button type="button" class="remove-box-form">Remove</button>
+    </fieldset>
+    {% empty %}
+    <p>No box types available.</p>
+    {% endfor %}
+  </div>
 
+  <button type="button" id="add-box-form">Add More Box Types</button>
   <button type="submit">Submit</button>
 </form>
 
@@ -24,8 +36,69 @@
 <div>{{ plot_div|safe }}</div>
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
 {% endif %}
+
 <a href="{% url 'container:index' %}">Back to Main Menu</a>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const formContainer = document.getElementById('box-forms-container');
+    const addButton = document.getElementById('add-box-form');
+    let formCount = {{ form.total_form_count }};
+    const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+
+    addButton.addEventListener('click', function() {
+      const newFormIndex = formCount;
+      const formHtml = `
+        <fieldset>
+          <legend>Box ${newFormIndex + 1}</legend>
+          <div>
+            <label for="id_form-${newFormIndex}-box_type">Select Box:</label>
+            <select name="form-${newFormIndex}-box_type" id="id_form-${newFormIndex}-box_type" required>
+              <option value="">Select Box</option>
+              {% for box in form.empty_form.fields.box_type.queryset %}
+              <option value="{{ box.id }}">{{ box }}</option>
+              {% endfor %}
+            </select>
+            <span class="helptext">Select Box for loading</span>
+          </div>
+          <div>
+            <label for="id_form-${newFormIndex}-number">Enter number of boxes:</label>
+            <input type="number" name="form-${newFormIndex}-number" id="id_form-${newFormIndex}-number" min="0" value="0" required>
+          </div>
+          <button type="button" class="remove-box-form">Remove</button>
+        </fieldset>
+      `;
+
+      formContainer.insertAdjacentHTML('beforeend', formHtml);
+      formCount++;
+      totalFormsInput.value = formCount;  // Update the management form count
+      addRemoveButtonListener(formContainer.lastElementChild.querySelector('.remove-box-form'));
+    });
+
+    function addRemoveButtonListener(button) {
+      button.addEventListener('click', function() {
+        const fieldset = button.parentElement;
+        fieldset.remove();
+        formCount--;
+        totalFormsInput.value = formCount;  // Update the management form count
+        updateFieldsets();
+      });
+    }
+
+    document.querySelectorAll('.remove-box-form').forEach(button => addRemoveButtonListener(button));
+
+    function updateFieldsets() {
+      document.querySelectorAll('#box-forms-container fieldset').forEach((fieldset, index) => {
+        fieldset.querySelector('legend').textContent = `Box ${index + 1}`;
+        fieldset.querySelectorAll('input, select').forEach(input => {
+          const name = input.getAttribute('name').replace(/form-\d+-/, `form-${index}-`);
+          const id = input.getAttribute('id').replace(/id_form-\d+-/, `id_form-${index}-`);
+          input.setAttribute('name', name);
+          input.setAttribute('id', id);
+        });
+      });
+    }
+  });
+</script>
 {% endblock %}

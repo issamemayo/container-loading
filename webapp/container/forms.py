@@ -44,7 +44,7 @@ class BoxTypeForm(forms.Form):
         queryset=BoxData.objects.all(),
         required=True,
         label="Select Box",
-        help_text="Select Box for loading"
+        
     )
     number=forms.IntegerField(label="Enter number of boxes", min_value=0, initial=0)
 

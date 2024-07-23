@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import plotly.graph_objects as go   
 import plotly.io as pio
+from plotly.subplots import make_subplots
 
 COLORS = [(0,0,1), (1,0,0), (0,0.6,0.25)]
 MAX_TIKZ_COLORS = 5
@@ -125,10 +126,10 @@ class BoxType():
         weight {float} -- weight of a single box
     """    
     id = 0
-    def __init__(self, size, permutation=[0,0,1], weight=1.0):
+    def __init__(self, size, permutation=[0,0,1], weight=1.0,name="box"):
         assert len(permutation) == 3, "permutation must be a list of 3 items"
         assert permutation[2] == 1, "the vertical alignment of the z-axis must be allowed"
-        
+        self.name=name
         self.size = np.array(size)
         self.id = BoxType.id
         BoxType.id += 1
@@ -436,7 +437,7 @@ class Container():
             block.draw(ax)
         plt.show()
 
-def draw_rectangular_cuboid_plotly(pos, dim, fig, color_faces=(0.7,0.7,0.7)):
+def draw_rectangular_cuboid_plotly(pos, dim, fig, color_faces=(0.7, 0.7, 0.7)):
     cuboid = RectangularCuboid(pos, dim)
     for face in cuboid.faces:
         fig.add_trace(go.Mesh3d(
@@ -448,40 +449,81 @@ def draw_rectangular_cuboid_plotly(pos, dim, fig, color_faces=(0.7,0.7,0.7)):
         ))
 
 def create_box_faces(x, y, z, dx, dy, dz):
-    vertices = np.array([
-        [x, y, z],
-        [x + dx, y, z],
-        [x + dx, y + dy, z],
-        [x, y + dy, z],
-        [x, y, z + dz],
-        [x + dx, y, z + dz],
-        [x + dx, y + dy, z + dz],
-        [x, y + dy, z + dz]
-    ])
-
     faces = [
-        [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
-        [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
-        [vertices[0], vertices[1], vertices[5], vertices[4]],  # Side face
-        [vertices[1], vertices[2], vertices[6], vertices[5]],  # Side face
-        [vertices[2], vertices[3], vertices[7], vertices[6]],  # Side face
-        [vertices[3], vertices[0], vertices[4], vertices[7]]   # Side face
+        [[x, y, z], [x + dx, y, z], [x + dx, y + dy, z], [x, y + dy, z]],  # bottom face
+        [[x, y, z], [x + dx, y, z], [x + dx, y, z + dz], [x, y, z + dz]],  # front face
+        [[x, y, z], [x, y + dy, z], [x, y + dy, z + dz], [x, y, z + dz]],  # left face
+        [[x + dx, y + dy, z], [x + dx, y, z], [x + dx, y, z + dz], [x + dx, y + dy, z + dz]],  # right face
+        [[x, y + dy, z], [x + dx, y + dy, z], [x + dx, y + dy, z + dz], [x, y + dy, z + dz]],  # back face
+        [[x, y, z + dz], [x + dx, y, z + dz], [x + dx, y + dy, z + dz], [x, y + dy, z + dz]]  # top face
     ]
-
     edges = [
-        [vertices[0], vertices[1]], [vertices[1], vertices[2]], [vertices[2], vertices[3]], [vertices[3], vertices[0]],  # Bottom face edges
-        [vertices[4], vertices[5]], [vertices[5], vertices[6]], [vertices[6], vertices[7]], [vertices[7], vertices[4]],  # Top face edges
-        [vertices[0], vertices[4]], [vertices[1], vertices[5]], [vertices[2], vertices[6]], [vertices[3], vertices[7]]   # Vertical edges
+        [(x, y, z), (x + dx, y, z)],
+        [(x + dx, y, z), (x + dx, y + dy, z)],
+        [(x + dx, y + dy, z), (x, y + dy, z)],
+        [(x, y + dy, z), (x, y, z)],
+        [(x, y, z + dz), (x + dx, y, z + dz)],
+        [(x + dx, y, z + dz), (x + dx, y + dy, z + dz)],
+        [(x + dx, y + dy, z + dz), (x, y + dy, z + dz)],
+        [(x, y + dy, z + dz), (x, y, z + dz)],
+        [(x, y, z), (x, y, z + dz)],
+        [(x + dx, y, z), (x + dx, y, z + dz)],
+        [(x + dx, y + dy, z), (x + dx, y + dy, z + dz)],
+        [(x, y + dy, z), (x, y + dy, z + dz)]
     ]
-
     return faces, edges
 
+box_type_colors={}
+
+def get_box_color(box_type):
+    if box_type not in box_type_colors:
+        # Assign a new color for this box type
+        color_index = len(box_type_colors)
+        box_type_colors[box_type] = f'rgb({np.random.randint(0, 256)}, {np.random.randint(0, 256)}, {np.random.randint(0, 256)})'
+    return box_type_colors[box_type]
+
 def draw_box_plotly(pos, box, fig):
-    draw_rectangular_cuboid_plotly(pos, box.dim, fig, color_faces=box.type.color)
+    color = get_box_color(box.type)
+    draw_rectangular_cuboid_plotly(pos, box.dim, fig, color_faces=color)
 
 def draw_block_plotly(block, fig):
     for n in np.ndindex(*block.N):
-        draw_box_plotly(n * block.box.dim + block.pos, block.box, fig)
+        pos = n * block.box.dim + block.pos
+        draw_box_plotly(pos, block.box, fig)
+        # Draw edges to show individual boxes
+        faces, edges = create_box_faces(pos[0], pos[1], pos[2], block.box.dim[0], block.box.dim[1], block.box.dim[2])
+        for edge in edges:
+            fig.add_trace(go.Scatter3d(
+                x=[edge[0][0], edge[1][0]],
+                y=[edge[0][1], edge[1][1]],
+                z=[edge[0][2], edge[1][2]],
+                mode='lines',
+                line=dict(color='black', width=1)
+            ))
+        # Annotate dimensions
+        x, y, z = pos
+        dx, dy, dz = block.box.dim
+        fig.add_trace(go.Scatter3d(
+            x=[x + dx/2], y=[y + dy/2], z=[z + dz],
+            mode='text',
+            text=[f'{dx} mm'],
+            textposition='bottom center',
+            showlegend=False
+        ))
+        fig.add_trace(go.Scatter3d(
+            x=[x + dx/2], y=[y + dy], z=[z + dz/2],
+            mode='text',
+            text=[f'{dy} mm'],
+            textposition='bottom center',
+            showlegend=False
+        ))
+        fig.add_trace(go.Scatter3d(
+            x=[x], y=[y + dy/2], z=[z + dz/2],
+            mode='text',
+            text=[f'{dz} mm'],
+            textposition='bottom center',
+            showlegend=False
+        ))
 
 def draw_space_plotly(space, fig):
     fig.add_trace(go.Scatter3d(
@@ -491,11 +533,12 @@ def draw_space_plotly(space, fig):
         mode='markers',
         marker=dict(size=0)
     ))
-    draw_rectangular_cuboid_plotly(space.pos, space.dim, fig, color_faces=(0.7,0.7,0.7))
+    draw_rectangular_cuboid_plotly(space.pos, space.dim, fig, color_faces=(0.7, 0.7, 0.7))
 
 def render_plotly_plot(container):
+    box_type_colors.clear()
     fig = go.Figure()
-
+    
     container_vertices = [
         [0, 0, 0],
         [container.dim[0], 0, 0],
@@ -516,12 +559,10 @@ def render_plotly_plot(container):
         marker=dict(size=4)
     ))
 
-    box_color = '#97BC62'
-    border_color = 'darkgreen'
-
     for block in container.blocks:
         pos = block.pos
         dim = block.dim
+        box_color = get_box_color(block.box.type)
 
         x, y, z = pos
         dx, dy, dz = dim
@@ -544,7 +585,7 @@ def render_plotly_plot(container):
                 y=[edge[0][1], edge[1][1]],
                 z=[edge[0][2], edge[1][2]],
                 mode='lines',
-                line=dict(color=border_color, width=2)
+                line=dict(color='darkgreen', width=2)
             ))
 
     fig.update_layout(
@@ -563,17 +604,28 @@ def render_plotly_plot(container):
         height=900
     )
 
+    # Add legend
+    legend_entries = []
+    for box_type, color in box_type_colors.items():
+        legend_entries.append(
+            go.Scatter3d(
+                x=[None], y=[None], z=[None],
+                mode='markers',
+                marker=dict(size=10, color=color),
+                name=box_type.name
+            )
+        )
+    fig.add_traces(legend_entries)
+
     return fig
 
-
-
 if __name__ == "__main__": 
-    B1 = BoxType([450, 210, 210], [0, 0, 1],100)
-    B2 = BoxType([355, 224, 360], [0, 0, 1],100)
-    B3 = BoxType([355, 235, 360], [0, 0, 1],500)
+    B1 = BoxType([450, 210, 210], [0, 0, 1],1,"b1")
+    B2 = BoxType([355, 224, 360], [0, 0, 1],1,"b2")
+    B3 = BoxType([355, 235, 360], [0, 0, 1],1,"b3")
     
     # Initialize container with cargo
-    container = Container([9750, 2550, 2900], {B1: 100, B3: 20, B2: 5})
+    container = Container([9750, 2550, 2900], {B1: 1000, B3: 350, B2: 908})
     
     # Iteratively fill the container until no more blocks can be added
     container.fill_all()
