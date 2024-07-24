@@ -15,11 +15,12 @@ def printf(log_file, *text):
         f.write("\n")
 
 class Box:
-    def __init__(self, _L=1, _w=1, _h=1, _weight=1):
+    def __init__(self, _L=1, _w=1, _h=1, _weight=1,crushing_strength=70):
         self.L = _L
         self.w = _w
         self.h = _h
         self.weight = _weight
+        self.crushing_strength=crushing_strength
 
     def ask_dim(self):
         print("Please enter the following values of the box :")
@@ -34,10 +35,12 @@ class Box:
         return self.L * self.w * self.h
 
 class Pallet(Box):
-    def __init__(self, _L=1, _w=1, _h=1):
+    def __init__(self, _L=1200, _w=1000, _h=2200):
         super().__init__(_L, _w, _h)  
         self.content = []
         self.nb_box = 0
+        
+
 
     def add_box(self, rotation, nb_L, nb_w, nb_h):
         if (nb_L * nb_w * nb_h) > 0:
@@ -116,20 +119,11 @@ def possibilities(dimensions):
 
 def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=False, log_file=".log"):
     best_pallet = Pallet()
-    
-    n = 0
+
     for dim in possibilities(box.get_dim()):
         pallet = _pallet.copy()
         pallet_fill_rest = []
         previous_pallet = _previous_pallet.copy()
-
-        if debug:
-            if fill_rest: printf(log_file, "\n" * 2 + "-+*+-" * 10 + "________base")
-            else: printf(log_file, "________rest")
-            printf(log_file, dim, " in ", pallet.get_dim())
-
-        n += 1
-        if debug: printf(log_file, "n=", n)
 
         nb_L = pallet.L // dim[0]
         L = dim[0] * nb_L
@@ -137,58 +131,37 @@ def fill_pallet(_pallet, box, fill_rest=True, _previous_pallet=Pallet(), debug=F
         nb_w = pallet.w // dim[1]
         w = dim[1] * nb_w
 
-        nb_h = pallet.h // dim[2]
+        max_boxes_height = box.crushing_strength // box.weight + 1
+        nb_h = min(pallet.h // dim[2], max_boxes_height)
         h = dim[2] * nb_h
 
-        L_r, w_r, h_r = 0, 0, 0
+        if debug:
+            printf(log_file, f"Trying box dimensions: {dim}, nb_L={nb_L}, nb_w={nb_w}, nb_h={nb_h}")
+
         if not nb_L * nb_w * nb_h == 0:
             L_r = pallet.L - L
             w_r = pallet.w - w
             h_r = pallet.h - h
 
-        pallet.add_box(n, nb_L, nb_w, nb_h)
+            pallet.add_box(1, nb_L, nb_w, nb_h)  # Assuming rotation 1 for simplicity
 
-        previous_pallet.combine(pallet)
+            previous_pallet.combine(pallet)
 
-        if debug:
-            printf(log_file, "nb box=", nb_L, "x", nb_w, "x", nb_h, " =", nb_L * nb_w * nb_h)
-            printf(log_file, "nb box in pallet=", nb_L, "x", nb_w, "x", nb_h, " =", pallet.nb_box)
-            printf(log_file, "total=", previous_pallet.nb_box)
-            printf(log_file, "total=", previous_pallet.content)
-            printf(log_file, "total=", L, "x", w, "x", h)
-            printf(log_file, "rest=", L_r, "x", w_r, "x", h_r)
+            if previous_pallet > best_pallet:
+                best_pallet = previous_pallet.copy()
 
-        if previous_pallet > best_pallet:
-            best_pallet = previous_pallet.copy()
+            if fill_rest:
+                pallet_L = Pallet(L_r, pallet.w, pallet.h)
+                pallet_l = Pallet(pallet.L, w_r, pallet.h)
+                pallet_h = Pallet(pallet.L, pallet.w, h_r)
+                pallet_fill_rest.extend([pallet_L, pallet_l, pallet_h])
+                for pallet in pallet_fill_rest:
+                    best_little_pallet_fill = fill_pallet(pallet, box, False, previous_pallet.copy(), debug, log_file)
+                    previous_pallet.combine(best_little_pallet_fill)
+                    if previous_pallet > best_pallet:
+                        best_pallet = previous_pallet.copy()
 
-        if fill_rest:
-            pallet_L = Pallet(L_r, pallet.w, pallet.h)
-            pallet_l = Pallet(pallet.L, w_r, pallet.h)
-            pallet_h = Pallet(pallet.L, pallet.w, h_r)
-            pallet_fill_rest.append(pallet_L)
-            pallet_fill_rest.append(pallet_l)
-            pallet_fill_rest.append(pallet_h)
-            if debug:
-                printf(log_file, "=" * 10 + "\nPallets to fill \n" + "=" * 10)
-                for c in pallet_fill_rest:
-                    printf(log_file, c)
-            for pallet in pallet_fill_rest:
-                best_little_pallet_fill = fill_pallet(pallet, box, False, previous_pallet.copy(), debug, log_file)
-                previous_pallet.combine(best_little_pallet_fill)
-
-                if previous_pallet > best_pallet:
-                    best_pallet = previous_pallet.copy()
-
-        pallet.remove_box(n, nb_L, nb_w, nb_h, log_file, debug)
-
-    if debug:
-        printf(log_file, "\n\n\n")
-        printf(log_file, "*" * 20)
-        printf(log_file, "End function")
-        printf(log_file, "Best Pallet\n")
-        printf(log_file, best_pallet)
-        printf(log_file, "*" * 20)
-        printf(log_file, "\n\n\n")
+            pallet.remove_box(1, nb_L, nb_w, nb_h)
 
     return best_pallet
 
@@ -269,7 +242,8 @@ def plot_pallet_plotly(pallet, box):
         rotation = step[0]
         nb_L = step[1]
         nb_w = step[2]
-        nb_h = step[3]
+        nb_h = int(step[3])
+       
 
         for i in range(nb_L):
             for j in range(nb_w):
@@ -360,6 +334,7 @@ def plot_pallet_plotly(pallet, box):
     )
 
     return fig
+
 
 
 def plot_pallet(pallet, box):
@@ -484,7 +459,7 @@ def main():
     with open("pallet_log.txt", 'w'):  
         pass  
 
-    box = Box(610, 350, 452, 10)
+    box = Box(500, 500, 200, 1)
     print(box.L, box.w, box.h)
 
     pallet = Pallet(1200, 1000, 2200)

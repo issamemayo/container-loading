@@ -7,6 +7,7 @@ class BoxData(models.Model):
     length = models.IntegerField(null=False)
     breadth = models.IntegerField(null=False)
     height = models.IntegerField(null=False)
+    crushing_strength=models.IntegerField(default=70)
 
     class Meta:
         db_table = 'box_data'

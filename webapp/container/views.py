@@ -29,12 +29,15 @@ def pallet_view(request):
             box_length = box_data.length
             box_width = box_data.breadth
             box_height = box_data.height
+            box_weight=box_data.net_weight
+            box_crushing_strength=box_data.crushing_strength
+            tolerance_limit=form.cleaned_data['tolerance_limit']
             pallet_length = form.cleaned_data['pallet_length']
             pallet_width = form.cleaned_data['pallet_breadth']
             pallet_height = form.cleaned_data['pallet_height']
 
             # Create Box and Pallet objects
-            box = Box(box_length, box_width, box_height)
+            box = Box(box_length+tolerance_limit, box_width+tolerance_limit, box_height+tolerance_limit,box_weight,box_crushing_strength)
             pallet = Pallet(pallet_length, pallet_width, pallet_height)
 
             # Fill pallet and get the optimized pallet
@@ -61,6 +64,8 @@ def cargo_view(request):
             truck_length = truck_data.length
             truck_breadth = truck_data.breadth
             truck_height = truck_data.height
+            max_weight=truck_form.cleaned_data['max_weight']
+            tolerance_limit=truck_form.cleaned_data['tolerance_limit']
 
           
             box_data = form.cleaned_data
@@ -69,12 +74,13 @@ def cargo_view(request):
             for form_data in box_data:
                 box_type = form_data['box_type']
                 number = form_data['number']
-                box_element=BoxType([box_type.length,box_type.breadth,box_type.height],[0,0,1],box_type.net_weight, box_type.sku_name)
+                
+                box_element=BoxType([box_type.length+tolerance_limit,box_type.breadth+tolerance_limit,box_type.height+tolerance_limit],[0,0,1],box_type.net_weight, box_type.sku_name)
                 if box_type and number > 0:
                     quantities_dict[box_element] = number
 
             # Create the container with the selected box types and quantities
-            container = Container([truck_length, truck_breadth, truck_height], quantities_dict)
+            container = Container([truck_length, truck_breadth, truck_height], quantities_dict,max_weight)
             container.fill_all()
 
             # Render the plot
