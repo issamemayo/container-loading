@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from .forms import PalletForm, CargoForm, BoxTypeFormSet
-from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly,report
+from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly,report,adjust_pallet_height
 from .container_algo import BoxType,Container,render_plotly_plot
 
 # Create your views here
@@ -43,9 +43,11 @@ def pallet_view(request):
 
             # Fill pallet and get the optimized pallet
             optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet_length, pallet_width, pallet_height))
+            adjusted_pallet=adjust_pallet_height(optimized_pallet,box)
 
-            fig = plot_pallet_plotly(optimized_pallet, box)
-            text=report(optimized_pallet,box)
+
+            fig = plot_pallet_plotly(adjusted_pallet, box)
+            text=report(adjusted_pallet,box)
             print(text)
             plot_div = fig.to_html(full_html=False)  # Convert the figure to HTML for embedding in the template
     else:

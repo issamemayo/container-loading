@@ -1,14 +1,265 @@
-Trying box dimensions: [700, 400, 377], nb_L=1, nb_w=2, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=0, nb_w=2, nb_h=5
-Trying box dimensions: [400, 700, 377], nb_L=1, nb_w=1, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=1, nb_w=0, nb_h=5
-Trying box dimensions: [400, 700, 377], nb_L=3, nb_w=0, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=1, nb_w=2, nb_h=0
-Trying box dimensions: [400, 700, 377], nb_L=3, nb_w=1, nb_h=0
-Trying box dimensions: [400, 700, 377], nb_L=3, nb_w=1, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=0, nb_w=2, nb_h=5
-Trying box dimensions: [400, 700, 377], nb_L=0, nb_w=1, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=1, nb_w=0, nb_h=5
-Trying box dimensions: [400, 700, 377], nb_L=3, nb_w=0, nb_h=5
-Trying box dimensions: [700, 400, 377], nb_L=1, nb_w=2, nb_h=0
-Trying box dimensions: [400, 700, 377], nb_L=3, nb_w=1, nb_h=0
+
+
+-+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+-________base
+[550, 550, 900] in [1200, 1000, 2200]
+n=1
+nb box=2x1x2 =4
+nb box in pallet=2x1x2 =4
+total=4
+total=1100x550x1800
+rest=100x450x400
+==========
+Pallets to fill 
+==========
+Pallet :
+dimensions : 100x1000x2200
+nb_boxes : 0
+content : []
+Pallet :
+dimensions : 1200x450x2200
+nb_boxes : 0
+content : []
+Pallet :
+dimensions : 1200x1000x400
+nb_boxes : 0
+content : []
+________rest
+[550, 550, 900] in [100, 1000, 2200]
+n=1
+nb box=0x1x2 =0
+nb box in pallet=0x1x2 =0
+total=4
+total=0x550x1800
+rest=0x0x0
+________rest
+[550, 550, 900] in [100, 1000, 2200]
+n=2
+nb box=0x1x2 =0
+nb box in pallet=0x1x2 =0
+total=4
+total=0x550x1800
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[1, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aad30>]]
+********************
+
+
+
+
+________rest
+[550, 550, 900] in [1200, 450, 2200]
+n=1
+nb box=2x0x2 =0
+nb box in pallet=2x0x2 =0
+total=4
+total=1100x0x1800
+rest=0x0x0
+________rest
+[550, 550, 900] in [1200, 450, 2200]
+n=2
+nb box=2x0x2 =0
+nb box in pallet=2x0x2 =0
+total=4
+total=1100x0x1800
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[1, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aad30>]]
+********************
+
+
+
+
+________rest
+[550, 550, 900] in [1200, 1000, 400]
+n=1
+nb box=2x1x0 =0
+nb box in pallet=2x1x0 =0
+total=4
+total=1100x550x0
+rest=0x0x0
+________rest
+[550, 550, 900] in [1200, 1000, 400]
+n=2
+nb box=2x1x0 =0
+nb box in pallet=2x1x0 =0
+total=4
+total=1100x550x0
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[1, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aad30>]]
+********************
+
+
+
+
+
+
+-+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+--+*+-________base
+[550, 550, 900] in [1200, 1000, 2200]
+n=2
+nb box=2x1x2 =4
+nb box in pallet=2x1x2 =4
+total=4
+total=1100x550x1800
+rest=100x450x400
+==========
+Pallets to fill 
+==========
+Pallet :
+dimensions : 100x1000x2200
+nb_boxes : 0
+content : []
+Pallet :
+dimensions : 1200x450x2200
+nb_boxes : 0
+content : []
+Pallet :
+dimensions : 1200x1000x400
+nb_boxes : 0
+content : []
+________rest
+[550, 550, 900] in [100, 1000, 2200]
+n=1
+nb box=0x1x2 =0
+nb box in pallet=0x1x2 =0
+total=4
+total=0x550x1800
+rest=0x0x0
+________rest
+[550, 550, 900] in [100, 1000, 2200]
+n=2
+nb box=0x1x2 =0
+nb box in pallet=0x1x2 =0
+total=4
+total=0x550x1800
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[2, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aaf10>]]
+********************
+
+
+
+
+________rest
+[550, 550, 900] in [1200, 450, 2200]
+n=1
+nb box=2x0x2 =0
+nb box in pallet=2x0x2 =0
+total=4
+total=1100x0x1800
+rest=0x0x0
+________rest
+[550, 550, 900] in [1200, 450, 2200]
+n=2
+nb box=2x0x2 =0
+nb box in pallet=2x0x2 =0
+total=4
+total=1100x0x1800
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[2, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aaf10>]]
+********************
+
+
+
+
+________rest
+[550, 550, 900] in [1200, 1000, 400]
+n=1
+nb box=2x1x0 =0
+nb box in pallet=2x1x0 =0
+total=4
+total=1100x550x0
+rest=0x0x0
+________rest
+[550, 550, 900] in [1200, 1000, 400]
+n=2
+nb box=2x1x0 =0
+nb box in pallet=2x1x0 =0
+total=4
+total=1100x550x0
+rest=0x0x0
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[2, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aaf10>]]
+********************
+
+
+
+
+
+
+
+
+********************
+End function
+Best Pallet
+
+Pallet :
+dimensions : 1200x1000x2200
+nb_boxes : 4
+content : [[1, 2, 1, 2, <__main__.Pallet object at 0x7fdbd72aad30>]]
+********************
+
+
+
+
