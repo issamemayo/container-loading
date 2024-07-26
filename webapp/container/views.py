@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from .forms import PalletForm, CargoForm, BoxTypeFormSet
-from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly
+from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly,report
 from .container_algo import BoxType,Container,render_plotly_plot
 
 # Create your views here
@@ -22,6 +22,7 @@ def index(request):
 
 def pallet_view(request):
     plot_div = None
+    text=""
     if request.method == 'POST':
         form = PalletForm(request.POST)
         if form.is_valid():
@@ -37,24 +38,24 @@ def pallet_view(request):
             pallet_height = form.cleaned_data['pallet_height']
 
             # Create Box and Pallet objects
-            box = Box(box_length+tolerance_limit, box_width+tolerance_limit, box_height+tolerance_limit,box_weight,box_crushing_strength)
+            box = Box(box_length+tolerance_limit, box_width+tolerance_limit, box_height+tolerance_limit,box_weight,box_data.sku_name,box_crushing_strength)
             pallet = Pallet(pallet_length, pallet_width, pallet_height)
 
             # Fill pallet and get the optimized pallet
             optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet_length, pallet_width, pallet_height))
-            print(optimized_pallet)
 
-          
             fig = plot_pallet_plotly(optimized_pallet, box)
+            text=report(optimized_pallet,box)
+            print(text)
             plot_div = fig.to_html(full_html=False)  # Convert the figure to HTML for embedding in the template
     else:
         form = PalletForm()
 
-    return render(request, 'container/pallet.html', {'form': form, 'plot_div': plot_div})
+    return render(request, 'container/pallet.html', {'form': form, 'plot_div': plot_div, 'text': text})
 
 def cargo_view(request):
     plot_div = None
-
+    text=""
     if request.method == 'POST':
         form = BoxTypeFormSet(request.POST)
         truck_form = CargoForm(request.POST)  
@@ -83,9 +84,12 @@ def cargo_view(request):
             container = Container([truck_length, truck_breadth, truck_height], quantities_dict,max_weight)
             container.fill_all()
 
+            
             # Render the plot
+
             fig = render_plotly_plot(container)
             plot_div = pio.to_html(fig, full_html=False)
+            #text=report(container)
 
     else:
         form = BoxTypeFormSet()
@@ -94,7 +98,8 @@ def cargo_view(request):
     return render(request, 'container/cargo.html', {
         'form': form,
         'truck_form': truck_form,
-        'plot_div': plot_div
+        'plot_div': plot_div,
+        'text':text
     })
 
 #Simple login auth implementation

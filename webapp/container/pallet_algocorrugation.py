@@ -15,11 +15,12 @@ def printf(log_file, *text):
         f.write("\n")
 
 class Box:
-    def __init__(self, _L=1, _w=1, _h=1, _weight=1,crushing_strength=70):
+    def __init__(self, _L=1, _w=1, _h=1, _weight=1,name="box",crushing_strength=70):
         self.L = _L
         self.w = _w
         self.h = _h
         self.weight = _weight
+        self.name=name
         self.crushing_strength=crushing_strength
 
     def ask_dim(self):
@@ -39,9 +40,8 @@ class Pallet(Box):
         super().__init__(_L, _w, _h)  
         self.content = []
         self.nb_box = 0
+        self.cog_height=0
         
-
-
     def add_box(self, rotation, nb_L, nb_w, nb_h):
         if (nb_L * nb_w * nb_h) > 0:
             merged = False
@@ -304,6 +304,7 @@ def plot_pallet_plotly(pallet, box):
         cog_x = cog_x_sum / total_weight
         cog_y = cog_y_sum / total_weight
         cog_z = cog_z_sum / total_weight
+        pallet.cog_height=cog_z
     else:
         cog_x, cog_y, cog_z = 0, 0, 0
 
@@ -426,6 +427,7 @@ def plot_pallet(pallet, box):
             cog_x = cog_x_sum / total_weight
             cog_y = cog_y_sum / total_weight
             cog_z = cog_z_sum / total_weight
+            pallet.cog_height=cog_z
         else:
             cog_x, cog_y, cog_z = 0, 0, 0
 
@@ -455,19 +457,34 @@ def plot_pallet(pallet, box):
     plt.tight_layout()
     plt.show()
 
+def report(optimized_pallet,box):
+    total_weight=optimized_pallet.nb_box*box.weight
+    stack_num=optimized_pallet.content[0][3]
+    height_in_mm= optimized_pallet.content[0][3]*box.h
+    
+    text=f"""{box.name}
+    Total weight of boxes in pallet is : {total_weight}kg\n\n
+    Number of boxes stacked : {stack_num}\n\n
+    Height of boxes is : {height_in_mm}mm\n\n
+    Center of Gravity is at a height of : {optimized_pallet.cog_height}mm\n\n
+    Crushing strength employed is : {box.crushing_strength}kg\n\n
+    """
+    return text
+    
+
 def main():
     with open("pallet_log.txt", 'w'):  
         pass  
 
-    box = Box(500, 500, 200, 1)
+    box = Box(700,400,377, 10)
     print(box.L, box.w, box.h)
 
     pallet = Pallet(1200, 1000, 2200)
     print(pallet.get_dim())
-
     optimized_pallet = fill_pallet(pallet, box, True, Pallet(pallet.L, pallet.w, pallet.h), debug=True, log_file="pallet_log.txt")
-    print(optimized_pallet)
+    print(optimized_pallet.nb_box)
     optimized_pallet.print_way_fill(True)
+    
     optimized_pallet.print_total(True)
     plot_pallet(optimized_pallet, box)
 

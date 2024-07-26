@@ -31,12 +31,15 @@
   <button type="submit">Submit</button>
 </form>
 
-{% if plot_div %}
-<h2>Visualization</h2>
-<div>{{ plot_div|safe }}</div>
+<div class="content-container">
+  <h2>Visualization</h2>
+  <div class="plot-container">
+    {% if plot_div %} {{ plot_div | safe }} {% endif %}
+  </div>
 
+  <div class="text-container">{% if text %} {{ text | safe }} {% endif %}</div>
+</div>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-{% endif %}
 
 <a href="{% url 'container:index' %}">Back to Main Menu</a>
 

@@ -619,13 +619,25 @@ def render_plotly_plot(container):
 
     return fig
 
-if __name__ == "__main__": 
-    B1 = BoxType([450, 210, 210], [0, 0, 1],1,"b1")
-    B2 = BoxType([355, 224, 360], [0, 0, 1],1,"b2")
-    B3 = BoxType([355, 235, 360], [0, 0, 1],1,"b3")
+def report(container):
+    formatted_list = [f" {item}" for item in container.boxtype]
+    sku_string = "\n".join(formatted_list)
+   
+    text=f"""
+Weight of loaded truck is {container.current_weight}kg\n\n
+Max Permissible weight of truck is {container.max_weight}kg\n\n
+"""
+
+    return text
     
+if __name__ == "__main__": 
+    B1 = BoxType([370, 285, 361], [0, 0, 1],9.87,"b1")#marie
+    B2 = BoxType([465, 180, 295], [0, 0, 1],7.42,"b2")#goodday choco
+    B3 = BoxType([540, 280, 220], [0, 0, 1],7.1,"b3")#butter 30g
+    B4 = BoxType([450, 200, 260], [0, 0, 1],5.25,"b3")#cashew
+    B5 = BoxType([300, 240, 300], [0, 0, 1],5.8,"b3")#nutri
     # Initialize container with cargo
-    container = Container([9750, 2550, 2900], {B1: 1000, B3: 350, B2: 908})
+    container = Container([9753, 2743, 3047], {B1:1120 , B2: 7, B3:171 ,B4:1285,B5:1},20000)
     
     # Iteratively fill the container until no more blocks can be added
     container.fill_all()
