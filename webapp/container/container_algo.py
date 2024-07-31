@@ -539,6 +539,7 @@ def render_plotly_plot(container):
     box_type_colors.clear()
     fig = go.Figure()
     
+    
     container_vertices = [
         [0, 0, 0],
         [container.dim[0], 0, 0],
@@ -556,7 +557,8 @@ def render_plotly_plot(container):
         z=[v[2] for v in container_vertices],
         mode='lines',
         line=dict(color='lightgrey', width=2),
-        marker=dict(size=4)
+        marker=dict(size=4),
+        showlegend=False
     ))
 
     for block in container.blocks:
@@ -576,7 +578,8 @@ def render_plotly_plot(container):
                 z=[v[2] for v in face],
                 color=box_color,
                 opacity=0.5,
-                flatshading=True
+                flatshading=True,
+                showlegend=False
             ))
 
         for edge in edges:
@@ -585,7 +588,8 @@ def render_plotly_plot(container):
                 y=[edge[0][1], edge[1][1]],
                 z=[edge[0][2], edge[1][2]],
                 mode='lines',
-                line=dict(color='darkgreen', width=2)
+                line=dict(color='darkgreen', width=2),
+                showlegend=False
             ))
 
     fig.update_layout(
@@ -619,17 +623,44 @@ def render_plotly_plot(container):
 
     return fig
 
-def report(container):
-    formatted_list = [f" {item}" for item in container.boxtype]
-    sku_string = "\n".join(formatted_list)
-   
-    text=f"""
-Weight of loaded truck is {container.current_weight}kg\n\n
-Max Permissible weight of truck is {container.max_weight}kg\n\n
-"""
+def reportcargo(container):
+    # Calculate total volume of the container
+    container_volume = container.dim[0] * container.dim[1] * container.dim[2]
 
-    return text
-    
+    # Initialize total volume of blocks
+    total_block_volume = 0
+
+    # Generate report for container's max weight, current weight, and block details
+    report = f"Max permissible weight of truck: {container.max_weight} kg<br/>"
+    report += f"Current weight of truck: {container.current_weight} kg<br/>"
+    report += "Box types and their quantities:<br/>"
+
+    report += "Loaded blocks:<br/>"
+    for block in container.blocks:
+        # Retrieve box dimensions
+        box_dims = block.box.dim
+        # Retrieve block dimensions
+        block_dims = block.dim.tolist()
+        # Format block dimensions
+        dimensions_str = f"{block_dims[0]}*{block_dims[1]}*{block_dims[2]}"
+        
+        # Add block volume to total volume
+        total_block_volume += block.volume
+        
+        report += (
+            f" - {block.Ntot} boxes of type '{block.box.type.name}'<br/> "
+            f"   Number of boxes along Length * Width * Height: {block.N[0]}X{block.N[1]}X{block.N[2]}<br/>"
+        )
+
+    # Calculate volume utilization percentage
+    volume_utilization = (total_block_volume / container_volume) * 100
+
+    # Add volume utilization to the report
+    report += f"Total volume utilization of container: {total_block_volume} cubic millimeters<br/>"
+    report += f"Volume utilization percentage: {volume_utilization:.2f}%<br/>"
+
+    return report
+
 if __name__ == "__main__": 
     B1 = BoxType([370, 285, 361], [0, 0, 1],9.87,"b1")#marie
     B2 = BoxType([465, 180, 295], [0, 0, 1],7.42,"b2")#goodday choco

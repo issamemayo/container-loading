@@ -233,6 +233,7 @@ def plot_pallet_plotly(pallet, box):
 
     # Create Plotly figure
     fig = go.Figure()
+    fig.update_layout(showlegend=False)
 
     # Add pallet edges
     pallet_vertices = [
@@ -252,7 +253,8 @@ def plot_pallet_plotly(pallet, box):
         z=[v[2] for v in pallet_vertices],
         mode='lines',
         line=dict(color='lightgrey', width=2),
-        marker=dict(size=4)
+        marker=dict(size=4),
+        showlegend=False
     ))
 
     # Add box faces, edges, and calculate center of gravity
@@ -310,7 +312,8 @@ def plot_pallet_plotly(pallet, box):
                             z=[v[2] for v in face],
                             color=box_color,
                             opacity=0.5,
-                            flatshading=True
+                            flatshading=True,
+                            showlegend=False
                         ))
 
                     # Add edges with dark green color
@@ -320,7 +323,8 @@ def plot_pallet_plotly(pallet, box):
                             y=[edge[0][1], edge[1][1]],
                             z=[edge[0][2], edge[1][2]],
                             mode='lines',
-                            line=dict(color=border_color, width=2)
+                            line=dict(color=border_color, width=2),
+                            showlegend=False
                         ))
 
         # Update the current_x and current_y for the next rotation
@@ -345,7 +349,8 @@ def plot_pallet_plotly(pallet, box):
         z=[cog_z],
         mode='markers',
         marker=dict(color='red', size=10),
-        name='Center of Gravity'
+        name='Center of Gravity',
+        showlegend=False
     ))
 
     fig.update_layout(
@@ -363,6 +368,16 @@ def plot_pallet_plotly(pallet, box):
         width=1200,  # Increase the width of the figure
         height=900   # Increase the height of the figure
     )
+    fig.add_trace(go.Scatter3d(
+        x=[None],  
+        y=[None],  
+        z=[None],  
+        mode='markers',
+        marker=dict(color='#97BC62', size=10),
+        name=box.name,
+        showlegend=True  # Show legend
+    ))   
+    
 
     return fig
 
@@ -493,11 +508,11 @@ def report(optimized_pallet,box):
     height_in_mm= optimized_pallet.content[0][3]*box.h
     
     text=f"""{box.name}
-    Total weight of boxes in pallet is : {total_weight}kg\n\n
-    Number of boxes stacked : {stack_num}\n\n
-    Height of boxes is : {height_in_mm}mm\n\n
-    Center of Gravity is at a height of : {optimized_pallet.cog_height}mm\n\n
-    Crushing strength employed is : {box.crushing_strength}kg\n\n
+    Total weight of boxes in pallet is : {total_weight}kg <br/>
+    Number of boxes stacked : {stack_num}<br/>
+    Height of boxes is : {height_in_mm}mm<br/>
+    Center of Gravity is at a height of : {optimized_pallet.cog_height}mm<br/>
+    Crushing strength employed is : {box.crushing_strength}kg<br/>
     """
     return text
 

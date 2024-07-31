@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from .forms import PalletForm, CargoForm, BoxTypeFormSet
 from .pallet_algocorrugation import Pallet, Box, fill_pallet, plot_pallet_plotly,report,adjust_pallet_height
-from .container_algo import BoxType,Container,render_plotly_plot
+from .container_algo import BoxType,Container,render_plotly_plot,reportcargo
 
 # Create your views here
 
@@ -91,7 +91,7 @@ def cargo_view(request):
 
             fig = render_plotly_plot(container)
             plot_div = pio.to_html(fig, full_html=False)
-            #text=report(container)
+            text=reportcargo(container)
 
     else:
         form = BoxTypeFormSet()
